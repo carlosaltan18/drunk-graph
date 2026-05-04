@@ -1,7 +1,13 @@
 services:
   neo4j:
     image: 'neo4j:latest'
-    environment:
-      - 'NEO4J_AUTH=neo4j/notverysecret'
+    container_name: neo4j
     ports:
-      - '7687'
+        - "7474:7474"   # Neo4j Browser (interfaz web)
+        - "7687:7687"   # Bolt (lo que usa el driver de Java)
+    environment:
+        - NEO4J_AUTH=neo4j/tu_password
+    volumes:
+        - ./import:/var/lib/neo4j/import
+        - ./data:/data
+
