@@ -1,61 +1,53 @@
-Aquí tienes un archivo README.md diseñado específicamente para tu proyecto DrunkGraph. Está estructurado para que cualquier persona (o tú mismo en el futuro) entienda cómo levantar el entorno y por qué las migraciones funcionan así.
+# DrunkGraph
 
-🍺 DrunkGraph - Infraestructura y Migraciones
-Este proyecto utiliza Docker para gestionar la base de datos de grafos Neo4j y un sistema de volúmenes para manejar la carga de datos inicial (migraciones) de forma sencilla.
+Spring Boot backend connected to a Neo4j graph database via Docker.
 
-🚀 Requisitos Previos
-Docker Desktop (Asegúrate de que el motor esté encendido).
+## Requirements
 
-Java 21 (Para ejecutar el backend de Spring Boot).
+- Docker
+- Java 21
 
-🐳 Configuración de Docker
-El archivo compose.yaml define un contenedor de Neo4j con persistencia de datos y una carpeta de intercambio de archivos.
+## Setup
 
-Estructura de Volúmenes
-Para que el sistema funcione, tu carpeta raíz debe verse así:
+Start Neo4j:
 
-Plaintext
-drunk-graph/
-├── import/           # Aquí colocas tus scripts .cypher
-│   └── liquidgrapg.cypher
-├── data/             # Creada automáticamente (IGNORADA EN GIT)
-└── compose.yaml
-
-./import: Se mapea a /var/lib/neo4j/import dentro del contenedor. Es el "puente" para pasar archivos de datos.
-
-./data: Mapeado a /data para que tu base de datos no se borre al apagar Docker.
-
-Levantar el entorno
-Desde la terminal en la raíz del proyecto, ejecuta:
-
-PowerShell
-
+```bash
 docker compose up -d
+```
 
-📑 Migraciones de Datos (Cypher)
+This exposes:
+- `localhost:7474` — Neo4j Browser (web UI)
+- `localhost:7687` — Bolt (used by the Spring driver)
 
-En este proyecto, las "migraciones" se manejan mediante archivos .cypher ubicados en la carpeta import/.
-Cómo ejecutar una migración
-Una vez que el contenedor esté corriendo (estado Running), puedes cargar tu grafo ejecutando el shell de Neo4j directamente en el contenedor:
+Credentials: `neo4j / tu_password` (set in `compose.yaml`).
 
-PowerShell
+Run the app:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The API listens on `localhost:8080`.
+
+## Loading data
+
+Cypher scripts go in `import/`. To run one against the live container:
+
+```bash
 docker exec -it neo4j cypher-shell -u neo4j -p tu_password -f /var/lib/neo4j/import/liquidgrapg.cypher
-¿Qué hace este comando?
+```
 
-docker exec -it neo4j: Entra al contenedor vivo.
+## Project structure
 
-cypher-shell: Llama a la herramienta de comandos de Neo4j.
+```
+import/          # Cypher migration scripts
+src/             # Spring Boot application
+compose.yaml     # Neo4j service definition
+```
 
--f: Indica que leerá un archivo en lugar de esperar comandos manuales.
+`data/` is created by Docker at runtime and is git-ignored (holds the Neo4j database files).
 
-🛠️ Desarrollo con Spring Boot
-El backend está configurado en el archivo application.properties para conectarse automáticamente al contenedor:
+## Notes
 
-Protocolo: Bolt (Puerto 7687).
-
-Versión: Spring Boot 4.0.7-SNAPSHOT.
-
-Notas de Seguridad
-.gitignore: La carpeta data/ está excluida para evitar subir archivos pesados (>100MB) a GitHub.
-
-JWT: Se utiliza una clave de 256 bits para la firma de tokens en el backend.
+- JWT secret and Neo4j password are hardcoded in `application.properties` — move them to environment variables before deploying.
+- JWT tokens expire after 24 hours (`jwt.expiration=86400000`).
