@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════
-// 0. LIMPIEZA
+// 0. LIMPIEZA DE LA BD EN CASO DE SER NECESARIO
 // ══════════════════════════════════════════════════════
 // MATCH (n) DETACH DELETE n;
 
@@ -184,7 +184,7 @@ MATCH (b:Bebida {id:'B016'}), (s:Sabor {nombre:'salado'})
   MERGE (b)-[:TIENE_SABOR {intensidad: 0.35}]->(s);
 
 // ══════════════════════════════════════════════════════
-// 6. USUARIOS — ahora con password (BCrypt) y rol
+// 6. USUARIOS — con password y rol
 // password de todos en texto plano para referencia:
 //   admin123  → $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
 //   user123   → $2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk2wt/O
@@ -247,7 +247,7 @@ SET u.alias           = 'admin',
     u.password        = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
 // ══════════════════════════════════════════════════════
-// 7. USUARIO → SABOR
+// 7. relaciones de usuario sabor
 // ══════════════════════════════════════════════════════
 MATCH (u:Usuario {id:'U001'}), (s:Sabor {nombre:'fuerte'})
   MERGE (u)-[:LE_GUSTA {peso: 0.90}]->(s);
