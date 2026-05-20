@@ -1,0 +1,85 @@
+{
+  "variables": {
+    "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}",
+    "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
+    "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
+    "drunkgraphAppId": "#{ENV.DRUNKGRAPH_APPLICATION_ID}",
+    "googleClientId": "#{ENV.GOOGLE_CLIENT_ID}",
+    "googleClientSecret": "#{ENV.GOOGLE_CLIENT_SECRET}"
+  },
+  "apiKeys": [
+    {
+      "key": "#{apiKey}",
+      "description": "Default API Key"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "/api/application/#{drunkgraphAppId}",
+      "body": {
+        "application": {
+          "name": "DrunkGraph",
+          "oauthConfiguration": {
+            "authorizedRedirectURLs": [
+              "http://localhost:8080/login/oauth2/code/fusionauth"
+            ],
+            "clientAuthenticationPolicy": "Required",
+            "logoutURL": "http://localhost:8080/logout",
+            "requireRegistration": false,
+            "enabledGrants": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "generateRefreshTokens": true
+          },
+          "jwtConfiguration": {
+            "enabled": true,
+            "timeToLiveInSeconds": 3600,
+            "refreshTokenTimeToLiveInMinutes": 43200
+          },
+          "registrationConfiguration": {
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/identity-provider",
+      "body": {
+        "identityProvider": {
+          "type": "Google",
+          "name": "Google",
+          "enabled": true,
+          "client_id": "#{googleClientId}",
+          "client_secret": "#{googleClientSecret}",
+          "buttonText": "Sign in with Google",
+          "scope": "openid email profile",
+          "applicationConfiguration": {
+            "#{drunkgraphAppId}": {
+              "enabled": true,
+              "createRegistration": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "user": {
+          "email": "#{adminEmail}",
+          "password": "#{adminPassword}"
+        },
+        "registration": {
+          "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
+          "roles": [
+            "admin"
+          ]
+        }
+      }
+    }
+  ]
+}
