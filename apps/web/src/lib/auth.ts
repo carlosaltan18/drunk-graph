@@ -12,7 +12,7 @@ export const auth = betterAuth({
           providerId: "fusionauth",
           clientId: process.env.FUSIONAUTH_CLIENT_ID!,
           clientSecret: process.env.FUSIONAUTH_CLIENT_SECRET!,
-          discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
+          discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration${process.env.FUSIONAUTH_TENANT_ID ? `?tenantId=${process.env.FUSIONAUTH_TENANT_ID}` : ""}`,
           scopes: ["openid", "email", "profile"],
           mapProfileToUser: (profile) => ({
             name: profile.name ?? profile.email?.split("@")[0] ?? profile.sub,
