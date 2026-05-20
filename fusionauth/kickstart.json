@@ -8,6 +8,9 @@
     "drunkgraphClientSecret": "#{ENV.DRUNKGRAPH_CLIENT_SECRET}",
     "googleClientId": "#{ENV.GOOGLE_CLIENT_ID}",
     "googleClientSecret": "#{ENV.GOOGLE_CLIENT_SECRET}",
+    "githubClientId": "#{ENV.GITHUB_CLIENT_ID}",
+    "githubClientSecret": "#{ENV.GITHUB_CLIENT_SECRET}",
+    "githubLambdaId": "#{UUID()}",
     "themeId": "#{UUID()}"
   },
   "apiKeys": [
@@ -94,6 +97,38 @@
           "client_secret": "#{googleClientSecret}",
           "buttonText": "Sign in with Google",
           "scope": "openid email profile",
+          "applicationConfiguration": {
+            "#{drunkgraphAppId}": {
+              "enabled": true,
+              "createRegistration": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/identity-provider",
+      "tenantId": "#{drunkgraphTenantId}",
+      "body": {
+        "identityProvider": {
+          "type": "OpenIDConnect",
+          "name": "GitHub",
+          "enabled": true,
+          "buttonText": "Sign in with GitHub",
+          "buttonImageURL": "https://github.githubassets.com/favicons/favicon.svg",
+          "oauth2": {
+            "client_id": "#{githubClientId}",
+            "client_secret": "#{githubClientSecret}",
+            "clientAuthenticationMethod": "client_secret_basic",
+            "authorization_endpoint": "https://github.com/login/oauth/authorize",
+            "token_endpoint": "https://github.com/login/oauth/access_token",
+            "userinfo_endpoint": "https://api.github.com/user",
+            "scope": "user:email",
+            "emailClaim": "email",
+            "uniqueIdClaim": "id",
+            "usernameClaim": "login"
+          },
           "applicationConfiguration": {
             "#{drunkgraphAppId}": {
               "enabled": true,
