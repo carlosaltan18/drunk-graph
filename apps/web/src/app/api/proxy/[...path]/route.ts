@@ -8,10 +8,22 @@ async function handler(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const tokenData = await auth.api.getAccessToken({
+    body: { providerId: "fusionauth" },
+    headers: reqHeaders,
+  })
+
+  const accessToken = tokenData?.accessToken
+
+  if (!accessToken) {
+    return NextResponse.json({ error: "No upstream token" }, { status: 401 })
   }
 
   const { path } = await params
@@ -24,12 +36,13 @@ async function handler(
     method: request.method,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.session.token}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body,
   })
 
-  const data = await upstream.json()
+  const text = await upstream.text()
+  const data = text ? JSON.parse(text) : null
   return NextResponse.json(data, { status: upstream.status })
 }
 
