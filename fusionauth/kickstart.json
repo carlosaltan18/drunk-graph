@@ -4,6 +4,7 @@
     "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
     "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
     "drunkgraphAppId": "#{ENV.DRUNKGRAPH_APPLICATION_ID}",
+    "drunkgraphClientSecret": "#{ENV.DRUNKGRAPH_CLIENT_SECRET}",
     "googleClientId": "#{ENV.GOOGLE_CLIENT_ID}",
     "googleClientSecret": "#{ENV.GOOGLE_CLIENT_SECRET}"
   },
@@ -15,17 +16,27 @@
   ],
   "requests": [
     {
+      "method": "PATCH",
+      "url": "/api/tenant/#{FUSIONAUTH_TENANT_ID}",
+      "body": {
+        "tenant": {
+          "issuer": "#{ENV.FUSIONAUTH_URL}"
+        }
+      }
+    },
+    {
       "method": "POST",
       "url": "/api/application/#{drunkgraphAppId}",
       "body": {
         "application": {
           "name": "DrunkGraph",
           "oauthConfiguration": {
+            "clientSecret": "#{drunkgraphClientSecret}",
             "authorizedRedirectURLs": [
-              "http://localhost:8080/login/oauth2/code/fusionauth"
+              "http://localhost:3000/api/auth/oauth2/callback/fusionauth"
             ],
             "clientAuthenticationPolicy": "Required",
-            "logoutURL": "http://localhost:8080/logout",
+            "logoutURL": "http://localhost:3000",
             "requireRegistration": false,
             "enabledGrants": [
               "authorization_code",
