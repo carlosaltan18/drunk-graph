@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph;
+package com.uvg.drunkgraph.infra.http;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

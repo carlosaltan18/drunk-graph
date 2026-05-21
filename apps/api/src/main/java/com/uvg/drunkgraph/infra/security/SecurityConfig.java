@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph;
+package com.uvg.drunkgraph.infra.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
