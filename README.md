@@ -40,11 +40,11 @@ A graph-powered drink recommendation platform. Users define their flavor prefere
 ### Recommendation Score
 
 ```
-Score = (Jaccard_base × 0.5) + (Bonus_ponderado × 0.5)
+Score = (Jaccard_base × 0.5) + (Weighted_bonus × 0.5)
 ```
 
 - **Jaccard base** — flavor set overlap: `|A ∩ B| / |A ∪ B|`
-- **Bonus ponderado** — weighted sum: `avg(gusto × intensidad)` over matched flavors
+- **Weighted bonus** — weighted sum: `avg(score × intensity)` over matched flavors
 
 Recommendations are computed at runtime via a single Cypher query — no pre-computation or message broker needed at this scale.
 
@@ -117,12 +117,14 @@ User → FusionAuth (Google / GitHub OAuth) → BetterAuth session (Next.js)
 
 ```
 apps/
-  web/          # Next.js frontend
-  api/          # Spring Boot API
+  web/                    # Next.js frontend
+  api/
+    import/               # Cypher seed files (run with `just seed <file>`)
 fusionauth/
   kickstart.json          # bootstraps FusionAuth on first run
   templates/
     oauth2Authorize.ftl   # custom login page
+docs/                     # architecture documentation
 compose.yaml              # Neo4j + FusionAuth + Postgres + MinIO
 .env.example              # all required environment variables
 ```
@@ -200,7 +202,7 @@ The app is now running at **http://localhost:3000**.
 | `just infra-down` | Stop Docker services |
 | `just infra-reset` | Wipe and restart all Docker services |
 | `just fusionauth-reset` | Re-run FusionAuth kickstart (e.g. after changing `kickstart.json`) |
-| `just seed <file>` | Run a Cypher seed file against Neo4j |
+| `just seed <file>` | Copy a Cypher file from `apps/api/import/` into Neo4j and run it (e.g. `just seed liquidgrapg.cypher`) |
 | `just generate-api` | Manually regenerate the TypeScript API client from the OpenAPI spec |
 
 ### Services

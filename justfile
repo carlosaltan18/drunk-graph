@@ -56,7 +56,10 @@ fusionauth-reset:
 # ── Database ──────────────────────────────────────────────────────────────────
 
 seed file:
-    docker exec -it neo4j cypher-shell -u neo4j -p "$NEO4J_PASSWORD" -f /var/lib/neo4j/import/{{file}}
+    #!/usr/bin/env sh
+    password=$(grep -m1 "^NEO4J_PASSWORD=" .env | cut -d'=' -f2-)
+    docker cp apps/api/import/{{file}} neo4j:/tmp/{{file}}
+    docker exec -it neo4j cypher-shell -u neo4j -p "$password" -f /tmp/{{file}}
 
 compile:
     cd apps/api && ./mvnw compile -q
