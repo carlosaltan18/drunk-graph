@@ -41,9 +41,18 @@ async function handler(
     body,
   })
 
+  const contentType = upstream.headers.get("content-type") ?? ""
   const text = await upstream.text()
-  const data = text ? JSON.parse(text) : null
-  return NextResponse.json(data, { status: upstream.status })
+
+  if (contentType.includes("application/json")) {
+    const data = text ? JSON.parse(text) : null
+    return NextResponse.json(data, { status: upstream.status })
+  }
+
+  return new NextResponse(text, {
+    status: upstream.status,
+    headers: { "content-type": contentType },
+  })
 }
 
 export const GET = handler
