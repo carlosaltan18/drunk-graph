@@ -3,11 +3,81 @@ services:
     image: 'neo4j:latest'
     container_name: neo4j
     ports:
-        - "7474:7474"   # Neo4j Browser (interfaz web)
-        - "7687:7687"   # Bolt (lo que usa el driver de Java)
+      - "7474:7474"   # Neo4j Browser
+      - "7687:7687"   # Bolt
     environment:
-        - NEO4J_AUTH=neo4j/tu_password
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
     volumes:
-        - ./import:/var/lib/neo4j/import
-        - ./data:/data
+      - ./import:/var/lib/neo4j/import
+      - neo4j_data:/data
+    networks:
+      - app_net
 
+  fusionauth-db:
+    image: postgres:17-alpine
+    container_name: fusionauth_db
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: ${FUSIONAUTH_DB_USER}
+      POSTGRES_PASSWORD: ${FUSIONAUTH_DB_PASSWORD}
+      POSTGRES_DB: fusionauth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FUSIONAUTH_DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fusionauth_net
+    volumes:
+      - fusionauth_db_data:/var/lib/postgresql/data
+
+  fusionauth:
+    image: fusionauth/fusionauth-app:latest
+    container_name: fusionauth
+    restart: unless-stopped
+    depends_on:
+      fusionauth-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://fusionauth-db:5432/fusionauth
+      DATABASE_ROOT_USERNAME: ${FUSIONAUTH_DB_USER}
+      DATABASE_ROOT_PASSWORD: ${FUSIONAUTH_DB_PASSWORD}
+      DATABASE_USERNAME: ${FUSIONAUTH_DB_USER}
+      DATABASE_PASSWORD: ${FUSIONAUTH_DB_PASSWORD}
+      FUSIONAUTH_APP_MEMORY: ${FUSIONAUTH_APP_MEMORY:-512M}
+      FUSIONAUTH_APP_RUNTIME_MODE: ${FUSIONAUTH_RUNTIME_MODE:-development}
+      FUSIONAUTH_APP_URL: http://localhost:9011
+      FUSIONAUTH_ISSUER_URL: ${FUSIONAUTH_URL}
+      FUSIONAUTH_URL: http://localhost:${FUSIONAUTH_PORT:-9011}
+      FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart.json
+      FUSIONAUTH_ADMIN_EMAIL: ${FUSIONAUTH_ADMIN_EMAIL}
+      FUSIONAUTH_ADMIN_PASSWORD: ${FUSIONAUTH_ADMIN_PASSWORD}
+      FUSIONAUTH_API_KEY: ${FUSIONAUTH_API_KEY}
+      DRUNKGRAPH_TENANT_ID: ${DRUNKGRAPH_TENANT_ID}
+      DRUNKGRAPH_APPLICATION_ID: ${DRUNKGRAPH_APPLICATION_ID}
+      DRUNKGRAPH_CLIENT_SECRET: ${DRUNKGRAPH_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      SEARCH_TYPE: database
+    networks:
+      - fusionauth_net
+      - app_net
+    ports:
+      - "${FUSIONAUTH_PORT:-9011}:9011"
+    volumes:
+      - fusionauth_config:/usr/local/fusionauth/config
+      - ./fusionauth:/usr/local/fusionauth/kickstart:z
+
+networks:
+  app_net:
+    driver: bridge
+  fusionauth_net:
+    driver: bridge
+
+volumes:
+  neo4j_data:
+  fusionauth_db_data:
+  fusionauth_config:

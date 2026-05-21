@@ -1,0 +1,173 @@
+{
+  "variables": {
+    "adminEmail": "#{ENV.FUSIONAUTH_ADMIN_EMAIL}",
+    "adminPassword": "#{ENV.FUSIONAUTH_ADMIN_PASSWORD}",
+    "apiKey": "#{ENV.FUSIONAUTH_API_KEY}",
+    "drunkgraphAppId": "#{ENV.DRUNKGRAPH_APPLICATION_ID}",
+    "drunkgraphTenantId": "#{ENV.DRUNKGRAPH_TENANT_ID}",
+    "drunkgraphClientSecret": "#{ENV.DRUNKGRAPH_CLIENT_SECRET}",
+    "googleClientId": "#{ENV.GOOGLE_CLIENT_ID}",
+    "googleClientSecret": "#{ENV.GOOGLE_CLIENT_SECRET}",
+    "githubClientId": "#{ENV.GITHUB_CLIENT_ID}",
+    "githubClientSecret": "#{ENV.GITHUB_CLIENT_SECRET}",
+    "githubLambdaId": "#{UUID()}",
+    "themeId": "#{UUID()}"
+  },
+  "apiKeys": [
+    {
+      "key": "#{apiKey}",
+      "description": "Default API Key"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "/api/theme/#{themeId}",
+      "body": {
+        "sourceThemeId": "75a068fd-e94b-451a-9aeb-3ddb9a3b5987",
+        "theme": {
+          "name": "DrunkGraph Theme"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/theme/#{themeId}",
+      "body": {
+        "theme": {
+          "templates": {
+            "oauth2Authorize": "@{templates/oauth2Authorize.ftl}"
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/tenant/#{drunkgraphTenantId}",
+      "body": {
+        "tenant": {
+          "name": "DrunkGraph",
+          "issuer": "#{ENV.FUSIONAUTH_ISSUER_URL}",
+          "themeId": "#{themeId}"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/application/#{drunkgraphAppId}",
+      "tenantId": "#{drunkgraphTenantId}",
+      "body": {
+        "application": {
+          "name": "DrunkGraph",
+          "oauthConfiguration": {
+            "clientSecret": "#{drunkgraphClientSecret}",
+            "authorizedRedirectURLs": [
+              "http://localhost:3000/api/auth/oauth2/callback/fusionauth"
+            ],
+            "clientAuthenticationPolicy": "Required",
+            "logoutURL": "http://localhost:3000",
+            "requireRegistration": false,
+            "enabledGrants": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "generateRefreshTokens": true
+          },
+          "jwtConfiguration": {
+            "enabled": true,
+            "timeToLiveInSeconds": 3600,
+            "refreshTokenTimeToLiveInMinutes": 43200
+          },
+          "registrationConfiguration": {
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/identity-provider",
+      "tenantId": "#{drunkgraphTenantId}",
+      "body": {
+        "identityProvider": {
+          "type": "Google",
+          "name": "Google",
+          "enabled": true,
+          "client_id": "#{googleClientId}",
+          "client_secret": "#{googleClientSecret}",
+          "buttonText": "Sign in with Google",
+          "scope": "openid email profile",
+          "applicationConfiguration": {
+            "#{drunkgraphAppId}": {
+              "enabled": true,
+              "createRegistration": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/identity-provider",
+      "tenantId": "#{drunkgraphTenantId}",
+      "body": {
+        "identityProvider": {
+          "type": "OpenIDConnect",
+          "name": "GitHub",
+          "enabled": true,
+          "buttonText": "Sign in with GitHub",
+          "buttonImageURL": "https://github.githubassets.com/favicons/favicon.svg",
+          "oauth2": {
+            "client_id": "#{githubClientId}",
+            "client_secret": "#{githubClientSecret}",
+            "clientAuthenticationMethod": "client_secret_basic",
+            "authorization_endpoint": "https://github.com/login/oauth/authorize",
+            "token_endpoint": "https://github.com/login/oauth/access_token",
+            "userinfo_endpoint": "https://api.github.com/user",
+            "scope": "user:email",
+            "emailClaim": "email",
+            "uniqueIdClaim": "id",
+            "usernameClaim": "login"
+          },
+          "applicationConfiguration": {
+            "#{drunkgraphAppId}": {
+              "enabled": true,
+              "createRegistration": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/system-configuration",
+      "body": {
+        "systemConfiguration": {
+          "corsConfiguration": {
+            "enabled": true,
+            "allowCredentials": true,
+            "allowedOrigins": ["https://accounts.google.com"],
+            "allowedMethods": ["GET", "POST"],
+            "allowedHeaders": ["Accept", "Content-Type", "Authorization"]
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "user": {
+          "email": "#{adminEmail}",
+          "password": "#{adminPassword}"
+        },
+        "registration": {
+          "applicationId": "#{FUSIONAUTH_APPLICATION_ID}",
+          "roles": [
+            "admin"
+          ]
+        }
+      }
+    }
+  ]
+}
