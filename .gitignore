@@ -38,8 +38,12 @@ data/
 
 # ── IDEs ──────────────────────────────────────────────────────────────────────
 .idea/
+!.idea/modules.xml
+!.idea/.gitignore
+!.idea/vcs.xml
 *.iws
 *.iml
+!apps/web/web.iml
 *.ipr
 .vscode/
 .classpath

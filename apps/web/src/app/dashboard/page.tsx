@@ -1,20 +1,12 @@
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-
-async function getMe(cookie: string) {
-  const res = await fetch(`${process.env.BETTER_AUTH_URL}/api/proxy/me`, {
-    headers: { cookie },
-    cache: "no-store",
-  })
-  if (!res.ok) return null
-  return res.json() as Promise<{ sub: string; email: string; name: string }>
-}
+import { createServerApi } from "@/lib/api/server"
 
 export default async function DashboardPage() {
   const reqHeaders = await headers()
   const session = await auth.api.getSession({ headers: reqHeaders })
-  const cookie = reqHeaders.get("cookie") ?? ""
-  const me = await getMe(cookie)
+  const api = await createServerApi()
+  const { data: me } = await api.GET("/api/me")
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center gap-4">

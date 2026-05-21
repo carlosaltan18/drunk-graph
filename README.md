@@ -217,3 +217,14 @@ The app is now running at **http://localhost:3000**.
 | Next.js | http://localhost:3000 |
 
 > **Hot reload:** devtools watches `target/classes`. After editing a `.java` file, run `just compile` to trigger the API restart.
+
+### IntelliJ IDEA setup
+
+The Next.js module is pre-configured and will be recognized automatically when you open the repo root.
+
+For the Spring API module, IntelliJ needs to read it from Maven once:
+1. Open the repo root in IntelliJ IDEA Ultimate
+2. In the Project tree, right-click `apps/api/pom.xml` → **Add as Maven Project**
+3. IntelliJ will index dependencies and enable full Spring/Java support
+
+> The Spring module can't be pre-committed because IntelliJ generates it with absolute paths to your local Maven repository (`~/.m2`), which differ per machine. The Next.js module has no machine-specific paths so it's safe to commit.
