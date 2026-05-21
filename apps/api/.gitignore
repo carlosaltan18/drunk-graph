@@ -1,4 +1,6 @@
 target/
+openapi/openapi.json
+openapi/.openapi-hash
 
 *.class
 *.jar
