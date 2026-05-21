@@ -134,48 +134,60 @@ compose.yaml              # Neo4j + FusionAuth + Postgres + MinIO
 - Docker
 - Java 21
 - Node.js 20+ / pnpm
+- [just](https://github.com/casey/just#installation) — task runner
+  - macOS: `brew install just`
+  - Windows: `winget install Casey.Just` or `scoop install just`
+  - Linux: `cargo install just` or see [prebuilt binaries](https://github.com/casey/just/releases)
 
-### Start infrastructure
+### Setup
 
 ```bash
-cp .env.example .env
-# fill in Google/GitHub OAuth credentials
-docker compose up -d
+just setup   # copies .env.example → .env and .env.local.example → .env.local
+pnpm install
 ```
 
-Services:
+Then open `.env` and fill in `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, and `GITHUB_CLIENT_SECRET`. Everything else — including `apps/web/.env.local` — is synced automatically and has working defaults.
+
+### Running everything
+
+```bash
+just dev
+```
+
+This starts the API, the Next.js frontend, and the OpenAPI watcher concurrently with colored output.
+
+### Individual tasks
+
+| Command | Description |
+|---|---|
+| `just setup` | Copy `.env.example` and `.env.local.example` to their real files (skips if already exists) |
+| `just api` | Spring Boot API only |
+| `just web` | Next.js frontend only |
+| `just watch` | OpenAPI spec watcher (auto-generates TypeScript client on spec change) |
+| `just compile` | Recompile the API to trigger devtools hot reload |
+| `just infra-up` | Start Docker services (Neo4j, FusionAuth, MinIO) |
+| `just infra-down` | Stop Docker services |
+| `just infra-reset` | Wipe and restart all Docker services |
+| `just fusionauth-reset` | Re-run FusionAuth kickstart (e.g. after changing `kickstart.json`) |
+| `just seed <file>` | Run a Cypher seed file against Neo4j |
+| `just generate-api` | Manually regenerate the TypeScript API client from the OpenAPI spec |
+
+### Services
+
 | Service | URL |
 |---|---|
+| API | http://localhost:8080 |
+| API Docs | http://localhost:8080/docs |
 | FusionAuth | http://localhost:9011 |
-| FusionAuth Admin | http://localhost:9011/admin |
 | Neo4j Browser | http://localhost:7474 |
-| MinIO Console | http://localhost:9001 |
+| MinIO Console | http://localhost:9101 |
+| Next.js | http://localhost:3000 |
 
-### Start the API
-
-```bash
-cd apps/api
-./mvnw spring-boot:run
-```
-
-> Hot reload: devtools watches `target/classes`. After editing a `.java` file, run `./mvnw compile` in a second terminal to trigger the restart.
-
-### Start the frontend
+### Frontend setup (first time)
 
 ```bash
 cd apps/web
 cp .env.local.example .env.local
-pnpm install
-pnpm dev
 ```
 
-The app runs at http://localhost:3000.
-
-### Reset FusionAuth
-
-If kickstart needs to re-run (e.g. after changing `kickstart.json`):
-
-```bash
-docker compose down fusionauth fusionauth-db -v
-docker compose up fusionauth-db fusionauth -d
-```
+> **Hot reload:** devtools watches `target/classes`. After editing a `.java` file, run `just compile` to trigger the API restart.

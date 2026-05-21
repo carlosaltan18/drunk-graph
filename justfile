@@ -1,6 +1,25 @@
 default:
     just --list
 
+# ── Setup ─────────────────────────────────────────────────────────────────────
+
+setup:
+    #!/usr/bin/env sh
+    if [ ! -f .env ]; then cp .env.example .env; echo "created .env — fill in GOOGLE_CLIENT_ID/SECRET and GITHUB_CLIENT_ID/SECRET"; fi
+    if [ ! -f apps/web/.env.local ]; then cp apps/web/.env.local.example apps/web/.env.local; fi
+    # extract values from root .env without sourcing (avoids errors on placeholder values)
+    get() { grep -m1 "^$1=" .env | cut -d'=' -f2-; }
+    sed -i.bak \
+        -e "s|^FUSIONAUTH_CLIENT_ID=.*|FUSIONAUTH_CLIENT_ID=$(get DRUNKGRAPH_APPLICATION_ID)|" \
+        -e "s|^FUSIONAUTH_CLIENT_SECRET=.*|FUSIONAUTH_CLIENT_SECRET=$(get DRUNKGRAPH_CLIENT_SECRET)|" \
+        -e "s|^FUSIONAUTH_URL=.*|FUSIONAUTH_URL=$(get FUSIONAUTH_URL)|" \
+        -e "s|^FUSIONAUTH_TENANT_ID=.*|FUSIONAUTH_TENANT_ID=$(get DRUNKGRAPH_TENANT_ID)|" \
+        -e "s|^SPRING_API_URL=.*|SPRING_API_URL=$(get SPRING_API_URL)|" \
+        apps/web/.env.local
+    rm -f apps/web/.env.local.bak
+    echo "apps/web/.env.local synced from root .env"
+    echo "Only secrets needing real values: GOOGLE_CLIENT_ID/SECRET and GITHUB_CLIENT_ID/SECRET in .env"
+
 # ── Dev ──────────────────────────────────────────────────────────────────────
 
 dev:
