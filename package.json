@@ -1,0 +1,10 @@
+{
+  "name": "drunkgraph",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web,watch -c blue,green,yellow --kill-others-on-fail \"just api\" \"just web\" \"just watch\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
