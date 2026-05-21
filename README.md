@@ -139,22 +139,53 @@ compose.yaml              # Neo4j + FusionAuth + Postgres + MinIO
   - Windows: `winget install Casey.Just` or `scoop install just`
   - Linux: `cargo install just` or see [prebuilt binaries](https://github.com/casey/just/releases)
 
-### Setup
+### Getting started
 
+Follow these steps in order. Do not skip any.
+
+**Step 1 — Clone the repo**
 ```bash
-just setup   # copies .env.example → .env and .env.local.example → .env.local
+git clone https://github.com/carlosaltan18/drunk-graph.git
+cd drunk-graph
+```
+
+**Step 2 — Copy environment files**
+```bash
+just setup
+```
+This creates `.env` and `apps/web/.env.local` from their example files and syncs shared values automatically.
+
+**Step 3 — Fill in OAuth credentials**
+
+Open `.env` in a text editor and fill in these four values (get them from Google Cloud Console and GitHub Developer Settings):
+```
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+```
+Everything else in `.env` already has working defaults — do not change them.
+
+**Step 4 — Start the infrastructure**
+
+Make sure Docker is running, then:
+```bash
+just infra-up
+```
+This starts Neo4j, FusionAuth, and MinIO in the background. Wait ~30 seconds for FusionAuth to finish bootstrapping before starting the app.
+
+**Step 5 — Install Node.js dependencies**
+```bash
 pnpm install
 ```
 
-Then open `.env` and fill in `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, and `GITHUB_CLIENT_SECRET`. Everything else — including `apps/web/.env.local` — is synced automatically and has working defaults.
-
-### Running everything
-
+**Step 6 — Start the application**
 ```bash
 just dev
 ```
+This starts the Spring Boot API, the Next.js frontend, and the OpenAPI watcher all at once with colored output. Leave this terminal open.
 
-This starts the API, the Next.js frontend, and the OpenAPI watcher concurrently with colored output.
+The app is now running at **http://localhost:3000**.
 
 ### Individual tasks
 
@@ -182,12 +213,5 @@ This starts the API, the Next.js frontend, and the OpenAPI watcher concurrently 
 | Neo4j Browser | http://localhost:7474 |
 | MinIO Console | http://localhost:9101 |
 | Next.js | http://localhost:3000 |
-
-### Frontend setup (first time)
-
-```bash
-cd apps/web
-cp .env.local.example .env.local
-```
 
 > **Hot reload:** devtools watches `target/classes`. After editing a `.java` file, run `just compile` to trigger the API restart.
