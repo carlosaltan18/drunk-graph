@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph;
+package com.uvg.drunkgraph.infra.http;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -12,11 +12,10 @@ import java.util.Map;
 @RequestMapping("/api")
 public class MeController {
 
+    record MeResponse(String sub, Map<String, Object> claims) {}
+
     @GetMapping("/me")
-    public Map<String, Object> me(@AuthenticationPrincipal Jwt jwt) {
-        return Map.of(
-            "sub", jwt.getSubject(),
-            "claims", jwt.getClaims()
-        );
+    public MeResponse me(@AuthenticationPrincipal Jwt jwt) {
+        return new MeResponse(jwt.getSubject(), jwt.getClaims());
     }
 }

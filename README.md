@@ -31,11 +31,11 @@ A graph-powered drink recommendation platform. Users define their flavor prefere
 ## Graph Model
 
 ```
-(Usuario)-[:LE_GUSTA {gusto: float}]->(Sabor)<-[:TIENE_SABOR {intensidad: float}]-(Bebida)
+(User)-[:LIKES {score: float}]->(Flavor)<-[:HAS_FLAVOR {intensity: float}]-(Drink)
 ```
 
-- `gusto` — how much the user likes that flavor (0.0–1.0)
-- `intensidad` — how strong that flavor is in the drink (0.0–1.0)
+- `score` — how much the user likes that flavor (0.0–1.0)
+- `intensity` — how strong that flavor is in the drink (0.0–1.0)
 
 ### Recommendation Score
 
@@ -55,11 +55,11 @@ The API follows **vertical slice architecture** grouped by bounded context, with
 ```
 src/main/java/com/uvg/drunkgraph/
 ├── modules/
-│   ├── bebida/
+│   ├── drink/
 │   │   ├── model/
-│   │   │   └── Bebida.java                        # @Node entity
+│   │   │   └── Drink.java                         # @Node entity
 │   │   ├── repository/
-│   │   │   └── BebidaRepository.java              # mutations only
+│   │   │   └── DrinkRepository.java               # mutations only
 │   │   └── use_cases/
 │   │       ├── commands/
 │   │       │   └── mark_as_drinked/
@@ -68,13 +68,13 @@ src/main/java/com/uvg/drunkgraph/
 │   │       │       └── MarkAsDrinkedUseCase.java
 │   │       └── queries/
 │   │           └── get_by_id/
-│   │               ├── GetBebidaByIdInput.java
-│   │               ├── GetBebidaByIdOutput.java
-│   │               ├── GetBebidaByIdQuery.java     # Neo4jClient Cypher
-│   │               └── GetBebidaByIdUseCase.java
-│   ├── usuario/
+│   │               ├── GetDrinkByIdInput.java
+│   │               ├── GetDrinkByIdOutput.java
+│   │               ├── GetDrinkByIdQuery.java      # Neo4jClient Cypher
+│   │               └── GetDrinkByIdUseCase.java
+│   ├── user/
 │   │   └── ...same structure...
-│   └── recomendacion/
+│   └── recommendation/
 │       └── use_cases/
 │           └── queries/
 │               └── get_recommendations/
@@ -84,9 +84,9 @@ src/main/java/com/uvg/drunkgraph/
 │                   └── GetRecommendationsUseCase.java
 └── infra/
     ├── http/
-    │   ├── BebidaController.java
-    │   ├── UsuarioController.java
-    │   └── RecomendacionController.java
+    │   ├── DrinkController.java
+    │   ├── UserController.java
+    │   └── RecommendationController.java
     ├── storage/
     │   └── StorageService.java                    # resolves MinIO keys → URLs
     └── security/
@@ -100,6 +100,7 @@ src/main/java/com/uvg/drunkgraph/
 - **Use case** — orchestrates one query or command, resolves infrastructure concerns (e.g. storage URLs), returns the HTTP output record.
 - **Controller** — thin HTTP adapter. Extracts request data, calls the use case, returns the response. No business logic.
 - **Image keys** — stored as relative keys in Neo4j (e.g. `drinks/mojito.jpg`). `StorageService` resolves them to full URLs at request time.
+- **Recommendation module** — has no repository (read-only). Uses `Neo4jClient` directly with the scoring Cypher query.
 
 ## Auth Flow
 
