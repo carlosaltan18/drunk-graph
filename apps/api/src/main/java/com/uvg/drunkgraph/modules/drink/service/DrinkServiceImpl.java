@@ -4,9 +4,7 @@ import com.uvg.drunkgraph.modules.drink.dto.DrinkRequest;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
-import com.uvg.drunkgraph.infra.cloudinary.CloudinaryService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,20 +13,13 @@ import java.util.UUID;
 public class DrinkServiceImpl implements IDrinkService {
 
     private final DrinkRepository drinkRepo;
-    private final CloudinaryService cloudinaryService;
 
-    public DrinkServiceImpl(DrinkRepository drinkRepo, CloudinaryService cloudinaryService) {
+    public DrinkServiceImpl(DrinkRepository drinkRepo) {
         this.drinkRepo = drinkRepo;
-        this.cloudinaryService = cloudinaryService;
     }
 
     @Override
-    public Drink create(DrinkRequest request, MultipartFile image) {
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            imageUrl = cloudinaryService.uploadImage(image);
-        }
-
+    public Drink create(DrinkRequest request) {
         Drink drink = Drink.builder()
                 .id(UUID.randomUUID().toString())
                 .name(request.getName())
@@ -36,7 +27,7 @@ public class DrinkServiceImpl implements IDrinkService {
                 .alcoholPct(request.getAlcoholPct())
                 .price(request.getPrice())
                 .flavors(request.getFlavors())
-                .imageUrl(imageUrl)
+                .imageUrl(request.getImageUrl())
                 .build();
         return drinkRepo.create(drink);
     }
@@ -58,25 +49,17 @@ public class DrinkServiceImpl implements IDrinkService {
     }
 
     @Override
-    public Drink update(String id, DrinkRequest request, MultipartFile image) {
-        Drink existingDrink = findById(id);
-        String imageUrl = existingDrink.getImageUrl();
-
-        if (image != null && !image.isEmpty()) {
-            imageUrl = cloudinaryService.uploadImage(image);
-        }
-
+    public Drink update(String id, DrinkRequest request) {
+        findById(id);
         Drink drink = Drink.builder()
                 .id(id)
                 .name(request.getName())
                 .category(request.getCategory())
                 .alcoholPct(request.getAlcoholPct())
                 .price(request.getPrice())
-                .imageUrl(imageUrl)
+                .imageUrl(request.getImageUrl())
                 .build();
-
         drinkRepo.update(id, drink);
-
         if (request.getFlavors() != null) {
             request.getFlavors().forEach((flavor, intensity) ->
                     drinkRepo.addFlavor(id, flavor, intensity));

@@ -26,6 +26,8 @@ dev:
     pnpm dev
 
 api:
+    #!/usr/bin/env sh
+    set -a && . ./.env && set +a
     cd apps/api && ./mvnw spring-boot:run
 
 web:

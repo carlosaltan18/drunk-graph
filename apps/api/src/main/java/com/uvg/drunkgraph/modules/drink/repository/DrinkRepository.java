@@ -1,8 +1,8 @@
 package com.uvg.drunkgraph.modules.drink.repository;
 
 import com.uvg.drunkgraph.modules.drink.model.Drink;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -11,244 +11,153 @@ import java.util.stream.Collectors;
 @Repository
 public class DrinkRepository {
 
-    private final Driver driver;
+    private final Neo4jClient neo4j;
 
-    public DrinkRepository(Driver driver) {
-        this.driver = driver;
+    public DrinkRepository(Neo4jClient neo4j) {
+        this.neo4j = neo4j;
     }
 
-    // ── CREATE ────────────────────────────────────────────────
-    public Drink create(Drink b) {
-        if (b.getId() == null || b.getId().isEmpty()) {
-            b.setId(UUID.randomUUID().toString());
-        }
-
-        try (Session session = driver.session()) {
-            session.run("""
-                            CREATE (:Drink {
-                                id: $id, name: $name,
-                                category: $category,
-                                alcohol_pct: $alcohol,
-                                price: $price,
-                                image_url: $imageUrl
-                            })
-                            """,
-                    Map.of(
-                            "id", b.getId(),
-                            "name", b.getName(),
-                            "category", b.getCategory(),
-                            "alcohol", b.getAlcoholPct(),
-                            "price", b.getPrice(),
-                            "imageUrl", b.getImageUrl() != null ? b.getImageUrl() : ""
-                    )
-            );
-            if (b.getFlavors() != null) {
-                b.getFlavors().forEach((flavor, intensity) ->
-                        addFlavor(b.getId(), flavor, intensity)
-                );
-            }
-        }
-        return b;
+    private static Map<String, Double> mapFlavors(Value flavorsValue) {
+        return flavorsValue.asList(s -> {
+            if (s.get("flavor").isNull()) return null;
+            return Map.entry(s.get("flavor").asString(), s.get("intensity").asDouble());
+        }).stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
     }
 
-    // ── READ ──────────────────────────────────────────────────
-    public List<Drink> listAll() {
-        try (Session session = driver.session()) {
-            return session.run("""
-                            MATCH (b:Drink)-[r:TIENE_SABOR]->(s:Flavor)
-                            RETURN b.id AS id, b.name AS name,
-                                   b.category AS category,
-                                   b.alcohol_pct AS alcohol,
-                                   b.price AS price,
-                                   b.image_url AS imageUrl,
-                                   collect({flavor: s.name, intensity: r.intensity}) AS flavors
-                            """)
-                    .list(row -> Drink.builder()
-                            .id(row.get("id").asString())
-                            .name(row.get("name").asString())
-                            .category(row.get("category").asString())
-                            .alcoholPct(row.get("alcohol").asDouble())
-                            .price(row.get("price").asDouble())
-                            .imageUrl(row.get("imageUrl").isNull() ? null : row.get("imageUrl").asString())
-                            .flavors(row.get("flavors").asList(s ->
-                                    Map.entry(
-                                            s.get("flavor").asString(),
-                                            s.get("intensity").asDouble()
-                                    )
-                            ).stream().collect(
-                                    Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
-                            ))
-                            .build()
-                    );
+    private static Drink mapRow(org.neo4j.driver.Record row) {
+        return Drink.builder()
+                .id(row.get("id").asString())
+                .name(row.get("name").asString())
+                .category(row.get("category").asString())
+                .alcoholPct(row.get("alcohol").asDouble())
+                .price(row.get("price").asDouble())
+                .imageUrl(row.get("imageUrl").isNull() ? null : row.get("imageUrl").asString())
+                .flavors(mapFlavors(row.get("flavors")))
+                .build();
+    }
+
+    public Drink create(Drink d) {
+        if (d.getId() == null || d.getId().isEmpty()) {
+            d.setId(UUID.randomUUID().toString());
         }
+        neo4j.query("""
+                CREATE (:Drink {
+                    id: $id, name: $name,
+                    category: $category,
+                    alcohol_pct: $alcohol,
+                    price: $price,
+                    image_url: $imageUrl
+                })
+                """)
+                .bind(d.getId()).to("id")
+                .bind(d.getName()).to("name")
+                .bind(d.getCategory()).to("category")
+                .bind(d.getAlcoholPct()).to("alcohol")
+                .bind(d.getPrice()).to("price")
+                .bind(d.getImageUrl() != null ? d.getImageUrl() : "").to("imageUrl")
+                .run();
+
+        if (d.getFlavors() != null) {
+            d.getFlavors().forEach((flavor, intensity) -> addFlavor(d.getId(), flavor, intensity));
+        }
+        return d;
     }
 
     public Optional<Drink> findById(String id) {
-        try (Session session = driver.session()) {
-            var record = session.run("""
-                    MATCH (b:Drink {id: $id})
-                    OPTIONAL MATCH (b)-[r:TIENE_SABOR]->(s:Flavor)
-                    RETURN b.id AS id, b.name AS name,
-                           b.category AS category,
-                           b.alcohol_pct AS alcohol,
-                           b.price AS price,
-                           b.image_url AS imageUrl,
-                           collect({flavor: s.name, intensity: r.intensity}) AS flavors
-                    """, Map.of("id", id)).single();
-
-            if (record == null) {
-                return Optional.empty();
-            }
-
-            Map<String, Double> flavorMap = record.get("flavors").asList(s -> {
-                        if (s.get("flavor").isNull()) return null;
-                        return Map.entry(s.get("flavor").asString(), s.get("intensity").asDouble());
-                    }).stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
-
-            return Optional.of(Drink.builder()
-                    .id(record.get("id").asString())
-                    .name(record.get("name").asString())
-                    .category(record.get("category").asString())
-                    .alcoholPct(record.get("alcohol").asDouble())
-                    .price(record.get("price").asDouble())
-                    .imageUrl(record.get("imageUrl").isNull() ? null : record.get("imageUrl").asString())
-                    .flavors(flavorMap)
-                    .build());
-        }
-    }
-
-    public List<Drink> findByCategory(String category) {
-        try (Session session = driver.session()) {
-            return session.run("""
-                            MATCH (b:Drink {category: $category})
-                            OPTIONAL MATCH (b)-[r:TIENE_SABOR]->(s:Flavor)
-                            RETURN b.id AS id, b.name AS name,
-                                   b.category AS category,
-                                   b.alcohol_pct AS alcohol,
-                                   b.price AS price,
-                                   b.image_url AS imageUrl,
-                                   collect({flavor: s.name, intensity: r.intensity}) AS flavors
-                            """, Map.of("category", category))
-                    .list(row -> {
-                        Map<String, Double> flavorMap = row.get("flavors").asList(s -> {
-                                    if (s.get("flavor").isNull()) return null;
-                                    return Map.entry(s.get("flavor").asString(), s.get("intensity").asDouble());
-                                }).stream()
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
-
-                        return Drink.builder()
-                                .id(row.get("id").asString())
-                                .name(row.get("name").asString())
-                                .category(row.get("category").asString())
-                                .alcoholPct(row.get("alcohol").asDouble())
-                                .price(row.get("price").asDouble())
-                                .imageUrl(row.get("imageUrl").isNull() ? null : row.get("imageUrl").asString())
-                                .flavors(flavorMap)
-                                .build();
-                    });
-        }
-    }
-
-    public void updatePrice(String id, double newPrice) {
-        try (Session session = driver.session()) {
-            session.run("""
-                            MATCH (b:Drink {id: $id})
-                            SET b.price = $price
-                            """,
-                    Map.of("id", id, "price", newPrice)
-            );
-        }
-    }
-
-    public void delete(String id) {
-        try (Session session = driver.session()) {
-            session.run("""
-                            MATCH (b:Drink {id: $id})
-                            DETACH DELETE b
-                            """,
-                    Map.of("id", id)
-            );
-        }
-    }
-
-    public void addFlavor(String bebidaId, String flavor, double intensity) {
-        try (Session session = driver.session()) {
-            session.run("""
-                            MATCH (b:Drink {id: $bid}), (s:Flavor {name: $flavor})
-                            MERGE (b)-[r:TIENE_SABOR]->(s)
-                            SET r.intensity = $intensity
-                            """,
-                    Map.of("bid", bebidaId, "flavor", flavor, "intensity", intensity)
-            );
-        }
-    }
-
-    public void deleteFlavor(String bebidaId, String flavor) {
-        try (Session session = driver.session()) {
-            session.run("""
-                            MATCH (b:Drink {id: $bid})-[r:TIENE_SABOR]->(s:Flavor {name: $flavor})
-                            DELETE r
-                            """,
-                    Map.of("bid", bebidaId, "flavor", flavor)
-            );
-        }
+        return neo4j.query("""
+                MATCH (d:Drink {id: $id})
+                OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
+                RETURN d.id AS id, d.name AS name,
+                       d.category AS category,
+                       d.alcohol_pct AS alcohol,
+                       d.price AS price,
+                       d.image_url AS imageUrl,
+                       collect({flavor: f.name, intensity: r.intensity}) AS flavors
+                """)
+                .bind(id).to("id")
+                .fetchAs(Drink.class)
+                .mappedBy((ts, row) -> mapRow(row))
+                .one();
     }
 
     public List<Drink> listAllWithFlavors() {
-        try (Session session = driver.session()) {
-            return session.run("""
-                            MATCH (b:Drink)
-                            OPTIONAL MATCH (b)-[r:TIENE_SABOR]->(s:Flavor)
-                            RETURN b.id AS id, b.name AS name,
-                                   b.category AS category,
-                                   b.alcohol_pct AS alcohol,
-                                   b.price AS price,
-                                   b.image_url AS imageUrl,
-                                   collect({flavor: s.name, intensity: r.intensity}) AS flavors
-                            """)
-                    .list(row -> {
-                        Map<String, Double> flavorMap = row.get("flavors").asList(s -> {
-                                    if (s.get("flavor").isNull()) return null;
-                                    return Map.entry(s.get("flavor").asString(), s.get("intensity").asDouble());
-                                }).stream()
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
-
-                        return Drink.builder()
-                                .id(row.get("id").asString())
-                                .name(row.get("name").asString())
-                                .category(row.get("category").asString())
-                                .alcoholPct(row.get("alcohol").asDouble())
-                                .price(row.get("price").asDouble())
-                                .imageUrl(row.get("imageUrl").isNull() ? null : row.get("imageUrl").asString())
-                                .flavors(flavorMap)
-                                .build();
-                    });
-        }
+        return new ArrayList<>(neo4j.query("""
+                MATCH (d:Drink)
+                OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
+                RETURN d.id AS id, d.name AS name,
+                       d.category AS category,
+                       d.alcohol_pct AS alcohol,
+                       d.price AS price,
+                       d.image_url AS imageUrl,
+                       collect({flavor: f.name, intensity: r.intensity}) AS flavors
+                """)
+                .fetchAs(Drink.class)
+                .mappedBy((ts, row) -> mapRow(row))
+                .all());
     }
 
-    public void update(String id, Drink drink) {
-        try (Session session = driver.session()) {
-            session.run("""
-                            MATCH (b:Drink {id: $id})
-                            SET b.name = $name,
-                                b.category = $category,
-                                b.alcohol_pct = $alcohol,
-                                b.price = $price,
-                                b.image_url = $imageUrl
-                            """,
-                    Map.of(
-                            "id", id,
-                            "name", drink.getName(),
-                            "category", drink.getCategory(),
-                            "alcohol", drink.getAlcoholPct(),
-                            "price", drink.getPrice(),
-                            "imageUrl", drink.getImageUrl() != null ? drink.getImageUrl() : ""
-                    )
-            );
-        }
+    public List<Drink> findByCategory(String category) {
+        return new ArrayList<>(neo4j.query("""
+                MATCH (d:Drink {category: $category})
+                OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
+                RETURN d.id AS id, d.name AS name,
+                       d.category AS category,
+                       d.alcohol_pct AS alcohol,
+                       d.price AS price,
+                       d.image_url AS imageUrl,
+                       collect({flavor: f.name, intensity: r.intensity}) AS flavors
+                """)
+                .bind(category).to("category")
+                .fetchAs(Drink.class)
+                .mappedBy((ts, row) -> mapRow(row))
+                .all());
+    }
+
+    public void update(String id, Drink d) {
+        neo4j.query("""
+                MATCH (d:Drink {id: $id})
+                SET d.name = $name,
+                    d.category = $category,
+                    d.alcohol_pct = $alcohol,
+                    d.price = $price,
+                    d.image_url = $imageUrl
+                """)
+                .bind(id).to("id")
+                .bind(d.getName()).to("name")
+                .bind(d.getCategory()).to("category")
+                .bind(d.getAlcoholPct()).to("alcohol")
+                .bind(d.getPrice()).to("price")
+                .bind(d.getImageUrl() != null ? d.getImageUrl() : "").to("imageUrl")
+                .run();
+    }
+
+    public void delete(String id) {
+        neo4j.query("MATCH (d:Drink {id: $id}) DETACH DELETE d")
+                .bind(id).to("id")
+                .run();
+    }
+
+    public void addFlavor(String drinkId, String flavor, double intensity) {
+        neo4j.query("""
+                MATCH (d:Drink {id: $drinkId}), (f:Flavor {name: $flavor})
+                MERGE (d)-[r:HAS_FLAVOR]->(f)
+                SET r.intensity = $intensity
+                """)
+                .bind(drinkId).to("drinkId")
+                .bind(flavor).to("flavor")
+                .bind(intensity).to("intensity")
+                .run();
+    }
+
+    public void deleteFlavor(String drinkId, String flavor) {
+        neo4j.query("""
+                MATCH (d:Drink {id: $drinkId})-[r:HAS_FLAVOR]->(f:Flavor {name: $flavor})
+                DELETE r
+                """)
+                .bind(drinkId).to("drinkId")
+                .bind(flavor).to("flavor")
+                .run();
     }
 }

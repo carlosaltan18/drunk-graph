@@ -17,114 +17,110 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final IUserService service;
-    private final IRecommendationService recomendacionService;
+    private final IRecommendationService recommendationService;
 
-    public UserController(IUserService service, IRecommendationService recomendacionService) {
+    public UserController(IUserService service, IRecommendationService recommendationService) {
         this.service = service;
-        this.recomendacionService = recomendacionService;
+        this.recommendationService = recommendationService;
     }
 
-
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')") // ◄ Solo un ADMIN debería poder crear usuarios a mano (saltándose FusionAuth)
-    public ResponseEntity<User> crear(@Valid @RequestBody UserRequest request) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> create(@Valid @RequestBody UserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") // ◄ Evita que un usuario normal liste a toda tu base de datos
-    public List<User> listar() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<User> listAll() {
         return service.listAll();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.name") // ◄ El usuario solo ve su propio perfil, el admin ve todos
-    public User buscar(@PathVariable String id) {
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
+    public User findById(@PathVariable String id) {
         return service.findById(id);
     }
 
-    // ── Actualización y Administración ─────────────────────────
-
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public User actualizar(@PathVariable String id,
-                           @Valid @RequestBody UserRequest request) {
+    public User update(@PathVariable String id, @Valid @RequestBody UserRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> eliminar(@PathVariable String id) {
+    public ResponseEntity<Map<String, String>> delete(@PathVariable String id) {
         service.delete(id);
-        return ResponseEntity.ok(Map.of("mensaje", "User eliminado correctamente"));
+        return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
     }
 
-    @PatchMapping("/{id}/rol")
+    @PatchMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> cambiarRol(
+    public ResponseEntity<Map<String, String>> changeRole(
             @PathVariable String id,
-            @RequestParam String nuevoRol) {
-        service.changeRol(id, nuevoRol);
-        return ResponseEntity.ok(Map.of("mensaje", "Rol actualizado a " + nuevoRol));
+            @RequestParam String role) {
+        service.changeRol(id, role);
+        return ResponseEntity.ok(Map.of("message", "Role updated to " + role));
     }
 
-    // ── Recomendaciones ────────────────────────────────────────
+    // ── Recommendations ────────────────────────────────────────
 
-    @GetMapping("/{id}/recomendaciones")
+    @GetMapping("/{id}/recommendations")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public List<Recommendation> recomendar(
+    public List<Recommendation> recommend(
             @PathVariable String id,
             @RequestParam(defaultValue = "5") int top) {
-        return recomendacionService.recomend(id, top);
+        return recommendationService.recomend(id, top);
     }
 
-    // ── Gustos ─────────────────────────────────────────────────
+    // ── Tastes ─────────────────────────────────────────────────
 
-    @PostMapping("/{id}/gustos")
+    @PostMapping("/{id}/tastes")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public ResponseEntity<Map<String, String>> agregarGusto(
+    public ResponseEntity<Map<String, String>> addTaste(
             @PathVariable String id,
             @Valid @RequestBody TasteRequest request) {
         service.addTaste(id, request);
-        return ResponseEntity.ok(Map.of("mensaje", "Gusto registrado"));
+        return ResponseEntity.ok(Map.of("message", "Taste added"));
     }
 
-    @GetMapping("/{id}/gustos")
+    @GetMapping("/{id}/tastes")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public Map<String, Double> obtenerGustos(@PathVariable String id) {
+    public Map<String, Double> getTastes(@PathVariable String id) {
         return service.getTaste(id);
     }
 
-    @DeleteMapping("/{id}/gustos/{sabor}")
+    @DeleteMapping("/{id}/tastes/{flavor}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public ResponseEntity<Map<String, String>> eliminarGusto(
+    public ResponseEntity<Map<String, String>> deleteTaste(
             @PathVariable String id,
-            @PathVariable String sabor) {
-        service.deleteTaste(id, sabor);
-        return ResponseEntity.ok(Map.of("mensaje", "Gusto eliminado"));
+            @PathVariable String flavor) {
+        service.deleteTaste(id, flavor);
+        return ResponseEntity.ok(Map.of("message", "Taste removed"));
     }
 
-    // ── Consumo ────────────────────────────────────────────────
+    // ── Consumption ────────────────────────────────────────────
 
-    @PostMapping("/{id}/consumo")
+    @PostMapping("/{id}/consumption")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public ResponseEntity<Map<String, String>> registrarConsumo(
+    public ResponseEntity<Map<String, String>> registerConsumption(
             @PathVariable String id,
             @Valid @RequestBody ConsumptionRequest request) {
         service.registerConsume(id, request);
-        return ResponseEntity.ok(Map.of("mensaje", "Consumo registrado"));
+        return ResponseEntity.ok(Map.of("message", "Consumption recorded"));
     }
 
-    @DeleteMapping("/{id}/consumo/{bebidaId}")
+    @DeleteMapping("/{id}/consumption/{drinkId}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.name")
-    public ResponseEntity<Map<String, String>> eliminarConsumo(
+    public ResponseEntity<Map<String, String>> deleteConsumption(
             @PathVariable String id,
-            @PathVariable String bebidaId) {
-        service.deleteConsume(id, bebidaId);
-        return ResponseEntity.ok(Map.of("mensaje", "Consumo eliminado"));
+            @PathVariable String drinkId) {
+        service.deleteConsume(id, drinkId);
+        return ResponseEntity.ok(Map.of("message", "Consumption removed"));
     }
 }
