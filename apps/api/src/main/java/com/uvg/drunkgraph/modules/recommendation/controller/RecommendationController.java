@@ -7,18 +7,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/recomendaciones")
+@RequestMapping("/api/recommendations")
 public class RecommendationController {
+
     private final IRecommendationService service;
 
     public RecommendationController(IRecommendationService service) {
         this.service = service;
     }
 
-    @GetMapping("/{usuarioId}")
-    public List<Recommendation> recomend(
-            @PathVariable String usuarioId,
+    @GetMapping("/{userId}")
+    public List<Recommendation> recommend(
+            @PathVariable String userId,
             @RequestParam(defaultValue = "5") int top) {
-        return service.recomend(usuarioId, top);
+        return service.recomend(userId, top);
     }
 }

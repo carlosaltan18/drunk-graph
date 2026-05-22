@@ -1,7 +1,6 @@
 package com.uvg.drunkgraph.modules.user.service;
 
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
-import com.uvg.drunkgraph.modules.exception.UnauthorizedException;
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
 import com.uvg.drunkgraph.modules.user.dto.UserRequest;
@@ -103,12 +102,4 @@ public class UserServiceImpl implements IUserService {
         repo.deleteConsume(usuarioId, bebidaId);
     }
 
-    // ── helper ────────────────────────────────────────────
-    private void validarAdmin(String adminId) {
-        User admin = repo.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin no encontrado: " + adminId));
-        if (!"ADMIN".equals(admin.getRol())) {
-            throw new UnauthorizedException("El usuario " + adminId + " no tiene permisos de administrador");
-        }
-    }
 }

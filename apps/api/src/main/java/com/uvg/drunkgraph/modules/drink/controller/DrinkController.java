@@ -5,11 +5,9 @@ import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.service.IDrinkService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -24,12 +22,10 @@ public class DrinkController {
         this.service = service;
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Drink> create(
-            @RequestPart("data") @Valid DrinkRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request, image));
+    public ResponseEntity<Drink> create(@Valid @RequestBody DrinkRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @GetMapping
@@ -47,13 +43,10 @@ public class DrinkController {
         return service.findByCategory(category);
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Drink update(
-            @PathVariable String id,
-            @RequestPart("data") @Valid DrinkRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        return service.update(id, request, image);
+    public Drink update(@PathVariable String id, @Valid @RequestBody DrinkRequest request) {
+        return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")

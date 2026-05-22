@@ -11,6 +11,7 @@ export async function createServerApi() {
     headers: reqHeaders,
   })
 
+
   return createClient<paths>({
     baseUrl: process.env.SPRING_API_URL,
     headers: {
