@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph.model;
+package com.uvg.drunkgraph.modules.flavor.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Sabor {
-    private String nombre;
-    private String descripcion;
+public class Flavor {
+    private String name;
+    private String description;
 }

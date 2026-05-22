@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph.model;
+package com.uvg.drunkgraph.modules.drink.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +11,12 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Bebida {
+public class Drink {
     private String id;
-    private String nombre;
-    private String categoria;
+    private String name;
+    private String category;
     private double alcoholPct;
-    private double precio;
-    private Map<String, Double> sabores;
+    private double price;
+    private Map<String, Double> flavors;
+    private String imageUrl;
 }

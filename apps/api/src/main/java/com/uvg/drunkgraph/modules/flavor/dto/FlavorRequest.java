@@ -1,14 +1,14 @@
-package com.uvg.drunkgraph.dto;
+package com.uvg.drunkgraph.modules.flavor.dto;
 
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class SaborRequest {
+public class FlavorRequest {
 
     @NotBlank(message = "El nombre del sabor es obligatorio")
-    private String nombre;
+    private String name;
 
-    private String descripcion;
+    private String description;
 }

@@ -4,14 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-// TODO: replace with Neo4j adapter once User node is implemented
-@Component
+//@Component
 public class NoOpUserProvisioningAdapter implements UserProvisioningPort {
 
     private static final Logger log = LoggerFactory.getLogger(NoOpUserProvisioningAdapter.class);
 
     @Override
-    public void provision(String sub, String email, String name) {
+    public String provision(String sub, String email, String name) {
         log.info("provision user (no-op): sub={} email={} name={}", sub, email, name);
+        return "provision user (no-op): sub=%s email=%s name=%s".formatted(sub, email, name);
     }
 }

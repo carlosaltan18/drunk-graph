@@ -1,4 +1,4 @@
-package com.uvg.drunkgraph.exception;
+package com.uvg.drunkgraph.modules.exception;
 
 public class UnauthorizedException extends RuntimeException {
     public UnauthorizedException(String message) {
