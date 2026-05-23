@@ -8,8 +8,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class DocsController {
 
-    @GetMapping("/docs")
-    public String docs() {
-        return "redirect:/docs.html";
+    @GetMapping("/client/docs")
+    public String clientDocs() {
+        return "redirect:/docs?urls.primaryName=client";
+    }
+
+    @GetMapping("/admin/docs")
+    public String adminDocs() {
+        return "redirect:/docs?urls.primaryName=admin";
     }
 }

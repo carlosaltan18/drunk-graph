@@ -6,3 +6,6 @@ FOR (f:Flavor) REQUIRE f.name IS UNIQUE;
 
 CREATE CONSTRAINT user_id_unique IF NOT EXISTS
 FOR (u:User) REQUIRE u.id IS UNIQUE;
+
+CREATE CONSTRAINT place_id_unique IF NOT EXISTS
+FOR (p:Place) REQUIRE p.id IS UNIQUE;
