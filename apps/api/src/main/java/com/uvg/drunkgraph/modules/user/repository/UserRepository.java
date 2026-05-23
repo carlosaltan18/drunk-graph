@@ -157,7 +157,7 @@ public class UserRepository {
                 .run();
     }
 
-    public List<Drink> getConsumedDrinks(String userId) {
+    public List<Drink> getConsumedDrinks(String userId, int page, int limit) {
         return new ArrayList<>(neo4j.query("""
                 MATCH (u:User {id: $userId})-[:CONSUMED]->(d:Drink)
                 OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
@@ -166,8 +166,12 @@ public class UserRepository {
                        d.alcohol_pct AS alcohol,
                        d.price AS price,
                        collect({flavor: f.name, intensity: r.intensity}) AS flavors
+                ORDER BY d.name
+                SKIP $skip LIMIT $limit
                 """)
                 .bind(userId).to("userId")
+                .bind((long) page * limit).to("skip")
+                .bind((long) limit).to("limit")
                 .fetchAs(Drink.class)
                 .mappedBy((ts, row) -> Drink.builder()
                         .id(row.get("id").asString())

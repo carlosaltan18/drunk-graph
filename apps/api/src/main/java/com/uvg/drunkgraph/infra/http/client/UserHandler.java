@@ -2,6 +2,9 @@ package com.uvg.drunkgraph.infra.http.client;
 
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
+import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
+import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
 import com.uvg.drunkgraph.modules.user.model.User;
 import com.uvg.drunkgraph.modules.user.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -69,5 +73,14 @@ public class UserHandler {
             @PathVariable String drinkId) {
         service.deleteConsume(jwt.getSubject(), drinkId);
         return ResponseEntity.ok(Map.of("message", "Consumption removed"));
+    }
+
+    @Operation(operationId = "getMyConsumption")
+    @GetMapping("/consumption")
+    public List<Drink> getConsumedDrinks(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int limit) {
+        return service.getConsumedDrinks(jwt.getSubject(), page, limit);
     }
 }

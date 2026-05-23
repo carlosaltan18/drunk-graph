@@ -18,4 +18,14 @@ public class AdminPlaceServiceImpl implements IAdminPlaceService {
     public Place create(PlaceRequest request) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
+
+    @Override
+    public Place update(String id, PlaceRequest request) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void softDelete(String id) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }

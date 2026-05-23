@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/places")
@@ -34,5 +35,20 @@ public class AdminPlaceHandler {
     @PostMapping
     public ResponseEntity<Place> create(@Valid @RequestBody PlaceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+    }
+
+    @Operation(operationId = "updatePlace")
+    @PutMapping("/{id}")
+    public Place update(
+            @PathVariable String id,
+            @Valid @RequestBody PlaceRequest request) {
+        return service.update(id, request);
+    }
+
+    @Operation(operationId = "deletePlace")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> softDelete(@PathVariable String id) {
+        service.softDelete(id);
+        return ResponseEntity.ok(Map.of("message", "Place deactivated"));
     }
 }
