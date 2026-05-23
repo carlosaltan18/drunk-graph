@@ -1,9 +1,11 @@
 'use client';
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
+import { clientApi } from '@/lib/api/client';
 
 type ApiFlavor = components['schemas']['Flavor'];
 
@@ -69,6 +71,7 @@ const FlavorSlider = ({
     </div>;
 };
 export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
+  const router = useRouter();
   const flavors: Flavor[] = apiFlavors.map(f => ({
     id: f.name ?? '',
     name: (f.name ?? '').toUpperCase(),
@@ -80,11 +83,21 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
   );
   const [maxSpend, setMaxSpend] = React.useState<string>('150');
   const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   const handleFlavorChange = (id: string, val: number) => {
-    setFlavorValues(prev => ({
-      ...prev,
-      [id]: val
-    }));
+    setFlavorValues(prev => ({ ...prev, [id]: val }));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    const activeTastes = Object.entries(flavorValues).filter(([, v]) => v > 0);
+    await Promise.all(
+      activeTastes.map(([flavor, weight]) =>
+        clientApi.POST('/api/users/me/tastes', { body: { flavor, weight } })
+      )
+    );
+    router.push('/dashboard');
   };
   return <div className="min-h-screen w-full max-w-[402px] mx-auto bg-zinc-950 text-white font-sans overflow-x-hidden selection:bg-orange-500 selection:text-black">
       {/* Container with spacing */}
@@ -170,14 +183,12 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
         {/* Footer Actions */}
         <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent z-50">
           <div className="max-w-[402px] mx-auto flex flex-col items-center gap-4">
-            <motion.button whileTap={{
-            scale: 0.95
-          }} className="w-full bg-orange-500 text-black font-black text-sm uppercase py-5 rounded-xl shadow-2xl shadow-orange-500/20 flex items-center justify-center gap-2 tracking-widest">
-              GET MY RECOMMENDATIONS
-              <ArrowRight className="w-5 h-5 stroke-[3px]" />
+            <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-orange-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-black text-sm uppercase py-5 rounded-xl shadow-2xl shadow-orange-500/20 flex items-center justify-center gap-2 tracking-widest">
+              {isSubmitting ? 'Saving...' : 'GET MY RECOMMENDATIONS'}
+              {!isSubmitting && <ArrowRight className="w-5 h-5 stroke-[3px]" />}
             </motion.button>
-            
-            <button className="text-zinc-600 text-xs font-bold underline underline-offset-4 tracking-wider uppercase hover:text-zinc-400 transition-colors">
+
+            <button onClick={() => router.push('/dashboard')} className="text-zinc-600 text-xs font-bold underline underline-offset-4 tracking-wider uppercase hover:text-zinc-400 transition-colors">
               Skip for now →
             </button>
           </div>

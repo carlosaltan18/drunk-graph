@@ -8,6 +8,7 @@ import { Drawer } from 'vaul';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
+import { clientApi } from '@/lib/api/client';
 
 type ApiDrink = components['schemas']['Drink'];
 
@@ -44,7 +45,7 @@ const ImageCarousel = ({
       <div className="overflow-hidden h-full" ref={emblaRef}>
         <div className="flex h-full">
           {images.map((url, index) => <div key={index} className="flex-[0_0_100%] min-w-0 h-full relative">
-              <DrinkImage src={url} alt={`Drink photo ${index + 1}`} fill className="object-cover" sizes="100vw" priority={index === 0} />
+              <DrinkImage src={url} alt={`Drink photo ${index + 1}`} className="absolute inset-0 w-full h-full" sizes="100vw" priority={index === 0} />
               <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-zinc-950/60" />
             </div>)}
         </div>
@@ -79,9 +80,21 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
   const handleLogDrink = () => {
     setIsModalOpen(true);
   };
-  const confirmLog = () => {
+  const confirmLog = async () => {
+    if (!drink?.id) return;
+    await clientApi.POST('/api/users/me/consumption', {
+      body: { drinkId: drink.id, rating: rating || 1 },
+    });
     setHasTried(true);
     setIsModalOpen(false);
+  };
+
+  const handleRemoveLog = async () => {
+    if (!drink?.id) return;
+    await clientApi.DELETE('/api/users/me/consumption/{drinkId}', {
+      params: { path: { drinkId: drink.id } },
+    });
+    setHasTried(false);
   };
   return <main className="flex flex-col w-full min-h-screen bg-zinc-950 text-white font-sans selection:bg-orange-500/30 overflow-x-hidden pb-24">
       {/* Top Image Section */}
@@ -213,10 +226,10 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
               I Tried This
               <ArrowRight size={16} strokeWidth={3} />
             </button> : <div className="space-y-2 text-center">
-              <button onClick={() => setHasTried(false)} className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2">
+              <button onClick={() => {}} className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2">
                 Tried <Check size={16} className="text-green-500" strokeWidth={3} />
               </button>
-              <button onClick={() => setHasTried(false)} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-bold">
+              <button onClick={handleRemoveLog} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-bold">
                 Remove from log
               </button>
             </div>}

@@ -72,8 +72,6 @@ const DrinkCard = ({
       <DrinkImage
         src={drink.imageUrl}
         alt={drink.name}
-        width={400}
-        height={128}
         className="h-32 w-full"
         fallbackGradient={drink.gradient}
         sizes="(max-width: 640px) 50vw, 25vw"

@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { MapPin, Plus, ArrowRight } from 'lucide-react';
+
 import { SessionBar } from './SessionBar';
 import { ActionCard } from './ActionCard';
 import { BrandButton } from './BrandButton';
@@ -30,10 +31,10 @@ export const AdminVenueList: React.FC<Props> = ({ places, userEmail }) => {
             </p>
           </div>
 
-          <button className="flex items-center gap-2 px-6 py-3 border-2 border-zinc-700 rounded-xl hover:border-amber-400 hover:text-amber-400 transition-all group self-start md:self-end">
+          <Link href="/admin/places/new" className="flex items-center gap-2 px-6 py-3 border-2 border-zinc-700 rounded-xl hover:border-amber-400 hover:text-amber-400 transition-all group self-start md:self-end">
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-black uppercase tracking-tighter">Add Venue</span>
-          </button>
+          </Link>
         </header>
 
         {!places.length ? (

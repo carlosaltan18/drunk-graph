@@ -6,6 +6,7 @@ import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
+import { clientApi } from '@/lib/api/client';
 
 type ApiDrink = components['schemas']['Drink'];
 
@@ -64,9 +65,12 @@ export const DrunkGraphHistory = ({ drinks: apiDrinks }: Props) => {
   );
   const [isSwipedId, setIsSwipedId] = React.useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setDrinks(prev => prev.filter(d => d.id !== id));
     if (isSwipedId === id) setIsSwipedId(null);
+    await clientApi.DELETE('/api/users/me/consumption/{drinkId}', {
+      params: { path: { drinkId: id } },
+    });
   };
   const stats = React.useMemo(() => {
     const venues = new Set(drinks.map(d => d.venue)).size;
@@ -167,8 +171,6 @@ export const DrunkGraphHistory = ({ drinks: apiDrinks }: Props) => {
                 <DrinkImage
                   src={drink.imageUrl}
                   alt={drink.name}
-                  width={60}
-                  height={60}
                   className="w-[60px] h-[60px] rounded-lg shrink-0"
                   fallbackGradient={drink.color}
                   sizes="60px"

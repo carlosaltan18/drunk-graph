@@ -6,9 +6,6 @@ import { cn } from '@/lib/utils';
 interface Props {
   src: string | null | undefined;
   alt: string;
-  fill?: boolean;
-  width?: number;
-  height?: number;
   className?: string;
   /** Tailwind gradient classes used as fallback when no image */
   fallbackGradient?: string;
@@ -19,9 +16,6 @@ interface Props {
 export const DrinkImage = ({
   src,
   alt,
-  fill,
-  width,
-  height,
   className,
   fallbackGradient = 'from-zinc-700 to-zinc-900',
   sizes,
@@ -35,23 +29,19 @@ export const DrinkImage = ({
   }
 
   return (
-    <div className={cn('relative overflow-hidden', !fill && className)}>
-      {/* Skeleton shown until image loads */}
+    <div className={cn('relative overflow-hidden', className)}>
       {!loaded && (
         <div className="absolute inset-0 bg-zinc-800 animate-pulse" />
       )}
       <Image
         src={src}
         alt={alt}
-        fill={fill}
-        width={!fill ? width : undefined}
-        height={!fill ? height : undefined}
+        fill
         sizes={sizes ?? '(max-width: 768px) 100vw, 50vw'}
         priority={priority}
         className={cn(
           'object-cover transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
-          fill ? className : 'w-full h-full',
         )}
         onLoad={() => setLoaded(true)}
         onError={() => setErrored(true)}
