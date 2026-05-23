@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.drink.repository;
 
 import com.uvg.drunkgraph.infra.cloudinary.ImageResolver;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.neo4j.driver.Value;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
@@ -39,6 +40,7 @@ public class DrinkRepository {
                 .name(row.get("name").asString())
                 .category(row.get("category").asString())
                 .placeId(row.get("placeId").isNull() ? null : row.get("placeId").asString())
+                .placeName(row.get("placeName").isNull() ? null : row.get("placeName").asString())
                 .alcoholPct(row.get("alcohol").asDouble())
                 .price(row.get("price").asDouble())
                 .imageUrls(imageResolver.resolve(publicIds))
@@ -53,6 +55,7 @@ public class DrinkRepository {
             d.price AS price,
             d.images AS images,
             p.id AS placeId,
+            p.name AS placeName,
             collect({flavor: f.name, intensity: r.intensity}) AS flavors
             """;
 
@@ -68,10 +71,23 @@ public class DrinkRepository {
                 .one();
     }
 
-    public List<Drink> listAllWithFlavors(String search, int page, int limit) {
-        return new ArrayList<>(neo4j.query("""
+    public PagedResult<Drink> listAllWithFlavors(String placeId, String search, int page, int limit) {
+        long total = neo4j.query("""
                 MATCH (d:Drink)
-                WHERE $search IS NULL OR toLower(d.name) CONTAINS toLower($search)
+                WHERE ($search IS NULL OR toLower(d.name) CONTAINS toLower($search))
+                  AND ($placeId IS NULL OR EXISTS { MATCH (d)-[:SERVED_AT]->(:Place {id: $placeId}) })
+                RETURN count(d) AS total
+                """)
+                .bind(search).to("search")
+                .bind(placeId).to("placeId")
+                .fetchAs(Long.class)
+                .mappedBy((ts, row) -> row.get("total").asLong())
+                .one().orElse(0L);
+
+        List<Drink> elements = new ArrayList<>(neo4j.query("""
+                MATCH (d:Drink)
+                WHERE ($search IS NULL OR toLower(d.name) CONTAINS toLower($search))
+                  AND ($placeId IS NULL OR EXISTS { MATCH (d)-[:SERVED_AT]->(:Place {id: $placeId}) })
                 OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
                 OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
                 RETURN """ + DRINK_FIELDS + """
@@ -79,15 +95,29 @@ public class DrinkRepository {
                 SKIP $skip LIMIT $limit
                 """)
                 .bind(search).to("search")
+                .bind(placeId).to("placeId")
                 .bind((long) page * limit).to("skip")
                 .bind((long) limit).to("limit")
                 .fetchAs(Drink.class)
                 .mappedBy((ts, row) -> mapRow(row))
                 .all());
+
+        return new PagedResult<>(elements, total, page, limit);
     }
 
-    public List<Drink> findByCategory(String category, String search, int page, int limit) {
-        return new ArrayList<>(neo4j.query("""
+    public PagedResult<Drink> findByCategory(String category, String search, int page, int limit) {
+        long total = neo4j.query("""
+                MATCH (d:Drink {category: $category})
+                WHERE $search IS NULL OR toLower(d.name) CONTAINS toLower($search)
+                RETURN count(d) AS total
+                """)
+                .bind(category).to("category")
+                .bind(search).to("search")
+                .fetchAs(Long.class)
+                .mappedBy((ts, row) -> row.get("total").asLong())
+                .one().orElse(0L);
+
+        List<Drink> elements = new ArrayList<>(neo4j.query("""
                 MATCH (d:Drink {category: $category})
                 WHERE $search IS NULL OR toLower(d.name) CONTAINS toLower($search)
                 OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
@@ -103,6 +133,8 @@ public class DrinkRepository {
                 .fetchAs(Drink.class)
                 .mappedBy((ts, row) -> mapRow(row))
                 .all());
+
+        return new PagedResult<>(elements, total, page, limit);
     }
 
 }

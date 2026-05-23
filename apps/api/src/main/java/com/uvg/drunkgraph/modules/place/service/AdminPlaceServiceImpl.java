@@ -2,15 +2,14 @@ package com.uvg.drunkgraph.modules.place.service;
 
 import com.uvg.drunkgraph.modules.place.dto.PlaceRequest;
 import com.uvg.drunkgraph.modules.place.model.Place;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class AdminPlaceServiceImpl implements IAdminPlaceService {
 
     @Override
-    public List<Place> listAll(String search, int page, int limit) {
+    public PagedResult<Place> listAll(String search, int page, int limit) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

@@ -1,11 +1,12 @@
 package com.uvg.drunkgraph.infra.http.client;
 
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
+import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
-import com.uvg.drunkgraph.modules.drink.model.Drink;
-import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
-import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
+import com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest;
 import com.uvg.drunkgraph.modules.user.model.User;
+import com.uvg.drunkgraph.modules.user.dto.UserStats;
 import com.uvg.drunkgraph.modules.user.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -14,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -75,9 +75,27 @@ public class UserHandler {
         return ResponseEntity.ok(Map.of("message", "Consumption removed"));
     }
 
+    @Operation(
+        operationId = "updatePreferences",
+        summary = "Upsert user preferences",
+        description = "Idempotent. Sets budgetMax and prefersAlcohol on the current user. Safe to call multiple times with the same payload."
+    )
+    @PutMapping
+    public User updatePreferences(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody UserPreferencesRequest request) {
+        return service.updatePreferences(jwt.getSubject(), request);
+    }
+
+    @Operation(operationId = "getMyStats")
+    @GetMapping("/stats")
+    public UserStats getStats(@AuthenticationPrincipal Jwt jwt) {
+        return service.getStats(jwt.getSubject());
+    }
+
     @Operation(operationId = "getMyConsumption")
     @GetMapping("/consumption")
-    public List<Drink> getConsumedDrinks(
+    public PagedResult<ConsumedDrink> getConsumedDrinks(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int limit) {

@@ -1,10 +1,5 @@
-import AdminSessionBar from "@/components/admin-session-bar"
+import { SWRProvider } from '@/components/providers/SWRProvider';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <AdminSessionBar />
-      {children}
-    </>
-  )
+  return <SWRProvider>{children}</SWRProvider>;
 }

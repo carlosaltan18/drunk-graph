@@ -2,10 +2,9 @@ package com.uvg.drunkgraph.infra.http.client;
 
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.service.IDrinkService;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/drinks")
@@ -19,11 +18,11 @@ public class DrinkHandler {
 
     @Operation(operationId = "listDrinks")
     @GetMapping
-    public List<Drink> listAll(
+    public PagedResult<Drink> listAll(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int limit) {
-        return service.listAll(search, page, limit);
+        return service.listAll(null, search, page, limit);
     }
 
     @Operation(operationId = "getDrink")
@@ -34,7 +33,7 @@ public class DrinkHandler {
 
     @Operation(operationId = "listDrinksByCategory")
     @GetMapping("/category/{category}")
-    public List<Drink> findByCategory(
+    public PagedResult<Drink> findByCategory(
             @PathVariable String category,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,

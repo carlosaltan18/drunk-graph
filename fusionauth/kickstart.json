@@ -16,7 +16,8 @@
     "githubClientId": "#{ENV.GITHUB_CLIENT_ID}",
     "githubClientSecret": "#{ENV.GITHUB_CLIENT_SECRET}",
     "githubLambdaId": "#{UUID()}",
-    "themeId": "#{UUID()}"
+    "themeId": "#{UUID()}",
+    "backofficeThemeId": "#{UUID()}"
   },
   "apiKeys": [
     {
@@ -145,11 +146,33 @@
     },
     {
       "method": "POST",
+      "url": "/api/theme/#{backofficeThemeId}",
+      "body": {
+        "sourceThemeId": "75a068fd-e94b-451a-9aeb-3ddb9a3b5987",
+        "theme": {
+          "name": "DrunkGraph Backoffice Theme"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/theme/#{backofficeThemeId}",
+      "body": {
+        "theme": {
+          "templates": {
+            "oauth2Authorize": "@{templates/oauth2AuthorizeBackoffice.ftl}"
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
       "url": "/api/tenant/#{backofficeTenantId}",
       "body": {
         "tenant": {
           "name": "DrunkGraph Backoffice",
-          "issuer": "#{ENV.FUSIONAUTH_ISSUER_URL}"
+          "issuer": "#{ENV.FUSIONAUTH_ISSUER_URL}",
+          "themeId": "#{backofficeThemeId}"
         }
       }
     },

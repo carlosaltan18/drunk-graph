@@ -33,6 +33,9 @@ api:
     set -a && . ./.env && set +a
     cd apps/api && ./mvnw spring-boot:run
 
+mock-api:
+    cd apps/mock-api && pnpm dev
+
 web:
     cd apps/web && pnpm dev
 

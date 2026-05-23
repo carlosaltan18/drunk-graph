@@ -1,10 +1,10 @@
-import UserSessionBar from "@/components/user-session-bar"
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { SWRProvider } from '@/components/providers/SWRProvider'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <UserSessionBar />
-      {children}
-    </>
-  )
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect('/login')
+  return <SWRProvider>{children}</SWRProvider>
 }
