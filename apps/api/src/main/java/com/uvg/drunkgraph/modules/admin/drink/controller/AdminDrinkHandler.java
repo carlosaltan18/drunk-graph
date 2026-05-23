@@ -4,6 +4,7 @@ import com.uvg.drunkgraph.modules.admin.drink.dto.DrinkBatchRequest;
 import com.uvg.drunkgraph.modules.admin.drink.dto.DrinkEditRequest;
 import com.uvg.drunkgraph.modules.admin.drink.service.IAdminDrinkService;
 import com.uvg.drunkgraph.modules.client.drink.model.Drink;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ public class AdminDrinkHandler {
         this.service = service;
     }
 
+    @Operation(operationId = "importDrinks")
     @PostMapping("/places/{placeId}/drinks/batch")
     public ResponseEntity<List<Drink>> importBatch(
             @PathVariable String placeId,
@@ -29,6 +31,7 @@ public class AdminDrinkHandler {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.importBatch(placeId, request));
     }
 
+    @Operation(operationId = "updateDrink")
     @PutMapping("/drinks/{id}")
     public Drink update(
             @PathVariable String id,
@@ -36,6 +39,7 @@ public class AdminDrinkHandler {
         return service.update(id, request);
     }
 
+    @Operation(operationId = "deleteDrink")
     @DeleteMapping("/drinks/{id}")
     public ResponseEntity<Map<String, String>> delete(@PathVariable String id) {
         service.delete(id);

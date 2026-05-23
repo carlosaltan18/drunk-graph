@@ -1,13 +1,13 @@
 import createClient from "openapi-fetch"
 import type { paths } from "@generated/admin-api/schema.d.ts"
-import { auth } from "@/lib/auth"
+import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
 
 // Hits Spring admin endpoints with an admin-tenant JWT — use in Server Components and Route Handlers only
 export async function createAdminApi() {
   const reqHeaders = await headers()
-  const tokenData = await auth.api.getAccessToken({
-    body: { providerId: "fusionauth" },
+  const tokenData = await adminAuth.api.getAccessToken({
+    body: { providerId: "fusionauth-admin" },
     headers: reqHeaders,
   })
 

@@ -3,6 +3,7 @@ package com.uvg.drunkgraph.modules.admin.place.controller;
 import com.uvg.drunkgraph.modules.admin.place.dto.PlaceRequest;
 import com.uvg.drunkgraph.modules.admin.place.model.Place;
 import com.uvg.drunkgraph.modules.admin.place.service.IAdminPlaceService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ public class AdminPlaceHandler {
         this.service = service;
     }
 
+    @Operation(operationId = "listPlaces")
     @GetMapping
     public List<Place> listAll(
             @RequestParam(required = false) String search,
@@ -28,6 +30,7 @@ public class AdminPlaceHandler {
         return service.listAll(search, page, limit);
     }
 
+    @Operation(operationId = "createPlace")
     @PostMapping
     public ResponseEntity<Place> create(@Valid @RequestBody PlaceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));

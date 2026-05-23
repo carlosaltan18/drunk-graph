@@ -6,6 +6,11 @@
     "drunkgraphAppId": "#{ENV.DRUNKGRAPH_APPLICATION_ID}",
     "drunkgraphTenantId": "#{ENV.DRUNKGRAPH_TENANT_ID}",
     "drunkgraphClientSecret": "#{ENV.DRUNKGRAPH_CLIENT_SECRET}",
+    "backofficeAppId": "#{ENV.BACKOFFICE_APPLICATION_ID}",
+    "backofficeTenantId": "#{ENV.BACKOFFICE_TENANT_ID}",
+    "backofficeClientSecret": "#{ENV.BACKOFFICE_CLIENT_SECRET}",
+    "backofficeUserEmail": "#{ENV.BACKOFFICE_USER_EMAIL}",
+    "backofficeUserPassword": "#{ENV.BACKOFFICE_USER_PASSWORD}",
     "googleClientId": "#{ENV.GOOGLE_CLIENT_ID}",
     "googleClientSecret": "#{ENV.GOOGLE_CLIENT_SECRET}",
     "githubClientId": "#{ENV.GITHUB_CLIENT_ID}",
@@ -135,6 +140,63 @@
               "createRegistration": true
             }
           }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/tenant/#{backofficeTenantId}",
+      "body": {
+        "tenant": {
+          "name": "DrunkGraph Backoffice",
+          "issuer": "#{ENV.FUSIONAUTH_ISSUER_URL}"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/application/#{backofficeAppId}",
+      "tenantId": "#{backofficeTenantId}",
+      "body": {
+        "application": {
+          "name": "DrunkGraph Backoffice",
+          "oauthConfiguration": {
+            "clientSecret": "#{backofficeClientSecret}",
+            "authorizedRedirectURLs": [
+              "http://localhost:3000/api/auth/admin/oauth2/callback/fusionauth-admin"
+            ],
+            "clientAuthenticationPolicy": "Required",
+            "logoutURL": "http://localhost:3000",
+            "requireRegistration": true,
+            "enabledGrants": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "generateRefreshTokens": true
+          },
+          "jwtConfiguration": {
+            "enabled": true,
+            "timeToLiveInSeconds": 3600,
+            "refreshTokenTimeToLiveInMinutes": 43200
+          },
+          "registrationConfiguration": {
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "tenantId": "#{backofficeTenantId}",
+      "body": {
+        "user": {
+          "email": "#{backofficeUserEmail}",
+          "password": "#{backofficeUserPassword}",
+          "firstName": "Admin"
+        },
+        "registration": {
+          "applicationId": "#{backofficeAppId}"
         }
       }
     },

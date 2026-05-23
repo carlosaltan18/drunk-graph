@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.client.drink.controller;
 
 import com.uvg.drunkgraph.modules.client.drink.model.Drink;
 import com.uvg.drunkgraph.modules.client.drink.service.IDrinkService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class DrinkHandler {
         this.service = service;
     }
 
+    @Operation(operationId = "listDrinks")
     @GetMapping
     public List<Drink> listAll(
             @RequestParam(required = false) String search,
@@ -24,11 +26,13 @@ public class DrinkHandler {
         return service.listAll(search, page, limit);
     }
 
+    @Operation(operationId = "getDrink")
     @GetMapping("/{id}")
     public Drink findById(@PathVariable String id) {
         return service.findById(id);
     }
 
+    @Operation(operationId = "listDrinksByCategory")
     @GetMapping("/category/{category}")
     public List<Drink> findByCategory(
             @PathVariable String category,

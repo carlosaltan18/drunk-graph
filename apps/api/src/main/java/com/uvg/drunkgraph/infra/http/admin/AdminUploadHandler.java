@@ -1,8 +1,8 @@
 package com.uvg.drunkgraph.infra.http.admin;
 
 import com.uvg.drunkgraph.infra.cloudinary.CloudinaryService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -17,6 +17,7 @@ public class AdminUploadHandler {
         this.cloudinaryService = cloudinaryService;
     }
 
+    @Operation(operationId = "signUpload")
     @PostMapping("/sign")
     public ResponseEntity<Map<String, Object>> sign(
             @RequestParam(defaultValue = "drinks") String folder) {

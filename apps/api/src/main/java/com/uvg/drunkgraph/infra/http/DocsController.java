@@ -10,11 +10,11 @@ public class DocsController {
 
     @GetMapping("/client/docs")
     public String clientDocs() {
-        return "redirect:/docs?urls.primaryName=client";
+        return "forward:/client-docs.html";
     }
 
     @GetMapping("/admin/docs")
     public String adminDocs() {
-        return "redirect:/docs?urls.primaryName=admin";
+        return "forward:/admin-docs.html";
     }
 }

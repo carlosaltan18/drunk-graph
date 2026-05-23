@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.client.flavor.controller;
 
 import com.uvg.drunkgraph.modules.client.flavor.model.Flavor;
 import com.uvg.drunkgraph.modules.client.flavor.service.IFlavorService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class FlavorHandler {
         this.service = service;
     }
 
+    @Operation(operationId = "listFlavors")
     @GetMapping
     public List<Flavor> listAll() {
         return service.listAll();

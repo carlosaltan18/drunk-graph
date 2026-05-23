@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.client.recommendation.controller;
 
 import com.uvg.drunkgraph.modules.client.recommendation.model.Recommendation;
 import com.uvg.drunkgraph.modules.client.recommendation.service.IRecommendationService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ public class RecommendationHandler {
         this.service = service;
     }
 
+    @Operation(operationId = "getRecommendations")
     @GetMapping
     public List<Recommendation> recommend(
             @AuthenticationPrincipal Jwt jwt,
