@@ -11,14 +11,11 @@ export default async function UserSessionBar() {
 
   if (!userSession) return null
 
-  const logoutUrl = `${process.env.FUSIONAUTH_URL}/oauth2/logout?client_id=${process.env.FUSIONAUTH_CLIENT_ID}`
-
   return (
     <SessionBar
       email={userSession.user.email}
       role="user"
       otherSession={adminSession ? { email: adminSession.user.email, role: "admin" } : null}
-      logoutUrl={logoutUrl}
     />
   )
 }

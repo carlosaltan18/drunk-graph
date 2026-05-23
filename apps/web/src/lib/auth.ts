@@ -26,6 +26,15 @@ const sharedConfig = {
   },
 }
 
+function mapProfileToUser(role: "user" | "admin") {
+  return (profile: Record<string, unknown>) => ({
+    name: (profile.name as string) ?? (profile.email as string)?.split("@")[0] ?? profile.sub,
+    email: profile.email,
+    image: profile.picture,
+    role,
+  })
+}
+
 export const auth = betterAuth({
   ...sharedConfig,
   basePath: "/api/auth",
@@ -39,12 +48,7 @@ export const auth = betterAuth({
           clientSecret: process.env.FUSIONAUTH_CLIENT_SECRET!,
           discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
           scopes: ["openid", "email", "profile"],
-          mapProfileToUser: (profile) => ({
-            name: profile.name ?? profile.email?.split("@")[0] ?? profile.sub,
-            email: profile.email,
-            image: profile.picture,
-            role: "user",
-          }),
+          mapProfileToUser: mapProfileToUser("user"),
         },
       ],
     }),
@@ -64,12 +68,7 @@ export const adminAuth = betterAuth({
           clientSecret: process.env.BACKOFFICE_CLIENT_SECRET!,
           discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
           scopes: ["openid", "email", "profile"],
-          mapProfileToUser: (profile) => ({
-            name: profile.name ?? profile.email?.split("@")[0] ?? profile.sub,
-            email: profile.email,
-            image: profile.picture,
-            role: "admin",
-          }),
+          mapProfileToUser: mapProfileToUser("admin"),
         },
       ],
     }),

@@ -7,7 +7,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
@@ -40,9 +39,8 @@ public class SecurityConfig {
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
                     .decoder(decoder)
-                    // Admins are not graph users — no provisioning, just authenticate
                     .jwtAuthenticationConverter(token ->
-                        new JwtAuthenticationToken(token, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), token.getSubject())
+                        new JwtAuthenticationToken(token, List.of(), token.getSubject())
                     )
                 )
             );
