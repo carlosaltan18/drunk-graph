@@ -5,12 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SessionBar } from './SessionBar';
 import { BrandButton } from './BrandButton';
 import { cn } from '@/lib/utils';
-import { adminClientApi } from '@/lib/api/admin-client';
-import type { components } from '@generated/admin-api/schema.d.ts';
-
-type DrinkItemRequest = components['schemas']['DrinkItemRequest'];
-
-// --- Types ---
+import { useAdminDrinks, type StagedDrink } from '@/lib/hooks/useAdminDrinks';
 
 interface RawImage {
   id: string;
@@ -19,49 +14,13 @@ interface RawImage {
   isSelected: boolean;
 }
 
-interface StagedDrink {
-  id: string;
-  name: string;
-  publicIds: string[];
-  previewUrls: string[];
-  files: File[];
-  status: 'pending' | 'uploading' | 'done' | 'error';
-}
-
-interface SignResponse {
-  signature: string;
-  timestamp: number;
-  cloudName: string;
-  apiKey: string;
-  folder: string;
-}
-
-// --- Helpers ---
-
-async function uploadToCloudinary(file: File, sig: SignResponse): Promise<string> {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('api_key', sig.apiKey);
-  form.append('timestamp', String(sig.timestamp));
-  form.append('signature', sig.signature);
-  form.append('folder', sig.folder);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
-    method: 'POST',
-    body: form,
-  });
-  if (!res.ok) throw new Error(`Cloudinary upload failed: ${res.status}`);
-  const json = await res.json();
-  return json.public_id as string;
-}
-
-// --- Components ---
-
 interface Props {
   placeId: string;
   userEmail: string;
 }
 
 export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
+  const { importBatch } = useAdminDrinks(placeId);
   const [images, setImages] = React.useState<RawImage[]>([]);
   const [drinks, setDrinks] = React.useState<StagedDrink[]>([]);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -98,17 +57,14 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
   const stageSelectedAsDrink = () => {
     const selected = images.filter(img => img.isSelected);
     if (selected.length === 0) return;
-    setDrinks(prev => {
-      const drink: StagedDrink = {
-        id: `drink-${Date.now()}`,
-        name: `DRINK #${prev.length + 1}`,
-        publicIds: [],
-        previewUrls: selected.map(img => img.previewUrl),
-        files: selected.map(img => img.file),
-        status: 'pending',
-      };
-      return [...prev, drink];
-    });
+    setDrinks(prev => [...prev, {
+      id: `drink-${Date.now()}`,
+      name: `DRINK #${prev.length + 1}`,
+      publicIds: [],
+      previewUrls: selected.map(img => img.previewUrl),
+      files: selected.map(img => img.file),
+      status: 'pending',
+    }]);
     setImages(prev => prev.filter(img => !img.isSelected));
   };
 
@@ -121,35 +77,11 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
   const handleImport = async () => {
     if (drinks.length === 0 || importing) return;
     setImporting(true);
-
-    try {
-      const { data: sig } = await adminClientApi.POST('/admin/upload/sign', {});
-      if (!sig) return;
-      const signData = sig as SignResponse;
-
-      const drinkRequests: DrinkItemRequest[] = await Promise.all(
-        drinks.map(async drink => {
-          setDrinks(prev => prev.map(d => d.id === drink.id ? { ...d, status: 'uploading' } : d));
-          try {
-            const publicIds = await Promise.all(drink.files.map(f => uploadToCloudinary(f, signData)));
-            setDrinks(prev => prev.map(d => d.id === drink.id ? { ...d, publicIds, status: 'done' } : d));
-            return { name: drink.name, category: 'cocktail', imagePublicIds: publicIds };
-          } catch {
-            setDrinks(prev => prev.map(d => d.id === drink.id ? { ...d, status: 'error' } : d));
-            throw new Error(`Failed to upload images for "${drink.name}"`);
-          }
-        })
-      );
-
-      await adminClientApi.POST('/admin/places/{placeId}/drinks/import', {
-        params: { path: { placeId } },
-        body: { drinks: drinkRequests },
-      });
-
-      setImported(true);
-    } finally {
-      setImporting(false);
-    }
+    const onProgress = (id: string, status: StagedDrink['status']) =>
+      setDrinks(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+    const ok = await importBatch(drinks, onProgress);
+    setImporting(false);
+    if (ok) setImported(true);
   };
 
   return (
@@ -229,14 +161,12 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       onClick={() => toggleSelection(img.id)}
                     >
                       <img src={img.previewUrl} alt="Uploaded" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-
                       <div className={cn(
                         "absolute top-2 left-2 w-5 h-5 rounded border flex items-center justify-center transition-colors",
                         img.isSelected ? "bg-amber-400 border-amber-400" : "bg-black/50 border-white/20"
                       )}>
                         {img.isSelected && <Check className="w-3.5 h-3.5 text-black stroke-[3px]" />}
                       </div>
-
                       <button
                         onClick={e => { e.stopPropagation(); removeImage(img.id); }}
                         className="absolute top-2 right-2 w-5 h-5 rounded bg-black/50 border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:border-red-500"
@@ -369,14 +299,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
               </div>
 
               {drinks.length > 0 && !imported && (
-                <BrandButton
-                  variant="admin"
-                  size="lg"
-                  className="w-full"
-                  showArrow
-                  disabled={importing}
-                  onClick={handleImport}
-                >
+                <BrandButton variant="admin" size="lg" className="w-full" showArrow disabled={importing} onClick={handleImport}>
                   {importing ? (
                     <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Importing…</span>
                   ) : (

@@ -20,11 +20,17 @@ function fetchPage([, search, page, category]: DrinkKey): Promise<PagedDrinks> {
       .GET('/api/drinks/category/{category}', {
         params: { path: { category }, query: { search, page, limit: PAGE_SIZE } },
       })
-      .then(r => r.data!);
+      .then(r => {
+        if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+        return r.data!;
+      });
   }
   return clientApi
     .GET('/api/drinks', { params: { query: { search, page, limit: PAGE_SIZE } } })
-    .then(r => r.data!);
+    .then(r => {
+      if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+      return r.data!;
+    });
 }
 
 export function useDrinks(search: string, category: string) {

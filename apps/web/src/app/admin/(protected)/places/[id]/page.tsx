@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation"
 import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { createAdminApi } from "@/lib/api/admin"
@@ -14,10 +15,11 @@ export default async function PlacePage({ params }: { params: Promise<{ id: stri
   ])
 
   const place = places?.elements?.find(p => p.id === id)
+  if (!place) notFound()
 
   return (
     <AdminDrinkEditor
-      place={place ?? { id, name: id }}
+      place={place}
       drinks={drinks ?? {}}
       userEmail={session!.user.email}
     />

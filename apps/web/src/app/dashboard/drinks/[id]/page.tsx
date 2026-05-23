@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation"
 import { createServerApi } from "@/lib/api/server"
 import { DrinkDetailScreen } from "@/components/magicpath/client-drink-detail/DrinkDetailScreen"
 
@@ -11,7 +12,7 @@ export default async function DrinkDetailPage({ params }: { params: Promise<{ id
     api.GET("/api/users/me/consumption", { params: { query: { limit: 100 } } }),
   ])
 
-  if (!drink) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">Drink not found</div>
+  if (!drink) notFound()
 
   return <DrinkDetailScreen drink={drink} fallbackRecommendation={recommendation ?? undefined} fallbackConsumption={consumption ?? undefined} />
 }

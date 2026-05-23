@@ -1,7 +1,8 @@
 'use client';
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Info, Beaker, Wine, Beer, Droplet, Coffee } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Info, Beaker, Wine, Beer, Droplet, Coffee, UploadCloud } from 'lucide-react';
+import Link from 'next/link';
 import { SessionBar } from './SessionBar';
 import { BrandButton } from './BrandButton';
 import { cn } from '@/lib/utils';
@@ -316,10 +317,14 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: pagedDr
           </div>
 
           {/* Footer Actions */}
-          <div className="absolute bottom-0 inset-x-0 p-8 bg-zinc-900 border-t border-white/5 space-y-4">
+          <div className="absolute bottom-0 inset-x-0 p-8 bg-zinc-900 border-t border-white/5 space-y-3">
             <BrandButton variant="admin" size="xl" className="w-full" showArrow onClick={handleSave} disabled={isSaving}>
               {isSaving ? 'Saving...' : savedId === currentDrink.id ? 'Saved!' : 'Save Changes'}
             </BrandButton>
+            <Link href={`/admin/places/${place.id}/import`} className="flex items-center justify-center gap-2 w-full py-3 border border-zinc-700 rounded-xl hover:border-amber-400 hover:text-amber-400 text-zinc-500 transition-all text-[11px] font-black uppercase tracking-widest">
+              <UploadCloud className="w-4 h-4" />
+              Upload New Drinks
+            </Link>
           </div>
         </aside>
       </main>

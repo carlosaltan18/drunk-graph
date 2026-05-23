@@ -10,7 +10,10 @@ type RecommendationKey = [route: string, drinkId: string];
 function fetchRecommendation([, drinkId]: RecommendationKey): Promise<ApiRecommendation> {
   return clientApi
     .GET('/api/users/me/recommendations/{drinkId}', { params: { path: { drinkId } } })
-    .then(r => r.data!);
+    .then(r => {
+      if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+      return r.data!;
+    });
 }
 
 export function useRecommendation(drinkId: string, fallbackData?: ApiRecommendation) {

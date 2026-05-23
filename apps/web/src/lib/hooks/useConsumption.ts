@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
+import { toast } from 'sonner';
 import { clientApi } from '@/lib/api/client';
 import type { components } from '@generated/api/schema.d.ts';
 
@@ -11,7 +12,10 @@ const KEY = '/api/users/me/consumption';
 const STATS_KEY = '/api/users/me/stats';
 
 const fetcher = (): Promise<PagedConsumedDrink> =>
-  clientApi.GET('/api/users/me/consumption', { params: { query: { limit: 100 } } }).then(r => r.data!);
+  clientApi.GET('/api/users/me/consumption', { params: { query: { limit: 100 } } }).then(r => {
+    if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+    return r.data!;
+  });
 
 export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
   const fallbackData = React.useMemo<PagedConsumedDrink | undefined>(
@@ -27,16 +31,28 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
   const logDrink = async (drinkId: string, rating: number) => {
     const optimistic: PagedConsumedDrink = { ...data, elements: [...elements, { id: drinkId, rating }] };
     mutate(optimistic, { revalidate: false });
-    await clientApi.POST('/api/users/me/consumption', { body: { drinkId, rating } });
-    mutate();
-    globalMutate(STATS_KEY);
+    try {
+      const res = await clientApi.POST('/api/users/me/consumption', { body: { drinkId, rating } });
+      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      mutate();
+      globalMutate(STATS_KEY);
+    } catch (err) {
+      mutate();
+      toast.error(err instanceof Error ? err.message : 'Failed to log drink');
+    }
   };
 
   const removeDrink = async (drinkId: string) => {
     const optimistic: PagedConsumedDrink = { ...data, elements: elements.filter(d => d.id !== drinkId) };
     mutate(optimistic, { revalidate: false });
-    await clientApi.DELETE('/api/users/me/consumption/{drinkId}', { params: { path: { drinkId } } });
-    mutate();
+    try {
+      const res = await clientApi.DELETE('/api/users/me/consumption/{drinkId}', { params: { path: { drinkId } } });
+      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      mutate();
+    } catch (err) {
+      mutate();
+      toast.error(err instanceof Error ? err.message : 'Failed to remove drink');
+    }
   };
 
   const hasTried = (drinkId: string) => elements.some(d => d.id === drinkId);
