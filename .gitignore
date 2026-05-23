@@ -30,8 +30,7 @@ next-env.d.ts
 
 # ── Generated ─────────────────────────────────────────────────────────────────
 generated/
-apps/api/openapi/openapi.json
-apps/api/openapi/.openapi-hash
+apps/api/openapi/**
 
 # ── Docker ────────────────────────────────────────────────────────────────────
 data/
@@ -59,4 +58,5 @@ data/
 Thumbs.db
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
-.claude/memory/
+.claude/
+CLAUDE.md

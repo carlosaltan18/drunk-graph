@@ -9,12 +9,6 @@ async function handler(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const reqHeaders = await headers()
-  const session = await auth.api.getSession({ headers: reqHeaders })
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   const tokenData = await auth.api.getAccessToken({
     body: { providerId: "fusionauth" },
     headers: reqHeaders,
@@ -23,7 +17,7 @@ async function handler(
   const accessToken = tokenData?.accessToken
 
   if (!accessToken) {
-    return NextResponse.json({ error: "No upstream token" }, { status: 401 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const { path } = await params

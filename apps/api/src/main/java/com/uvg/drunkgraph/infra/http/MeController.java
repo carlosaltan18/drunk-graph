@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -16,6 +18,11 @@ public class MeController {
 
     @GetMapping("/me")
     public MeResponse me(@AuthenticationPrincipal Jwt jwt) {
-        return new MeResponse(jwt.getSubject(), jwt.getClaims());
+        Map<String, Object> claims = jwt.getClaims().entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue() instanceof Instant i ? i.toString() : e.getValue()
+                ));
+        return new MeResponse(jwt.getSubject(), claims);
     }
 }

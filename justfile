@@ -14,6 +14,9 @@ setup:
         -e "s|^FUSIONAUTH_CLIENT_SECRET=.*|FUSIONAUTH_CLIENT_SECRET=$(get DRUNKGRAPH_CLIENT_SECRET)|" \
         -e "s|^FUSIONAUTH_URL=.*|FUSIONAUTH_URL=$(get FUSIONAUTH_URL)|" \
         -e "s|^FUSIONAUTH_TENANT_ID=.*|FUSIONAUTH_TENANT_ID=$(get DRUNKGRAPH_TENANT_ID)|" \
+        -e "s|^BACKOFFICE_CLIENT_ID=.*|BACKOFFICE_CLIENT_ID=$(get BACKOFFICE_APPLICATION_ID)|" \
+        -e "s|^BACKOFFICE_CLIENT_SECRET=.*|BACKOFFICE_CLIENT_SECRET=$(get BACKOFFICE_CLIENT_SECRET)|" \
+        -e "s|^BACKOFFICE_TENANT_ID=.*|BACKOFFICE_TENANT_ID=$(get BACKOFFICE_TENANT_ID)|" \
         -e "s|^SPRING_API_URL=.*|SPRING_API_URL=$(get SPRING_API_URL)|" \
         apps/web/.env.local
     rm -f apps/web/.env.local.bak
@@ -26,6 +29,8 @@ dev:
     pnpm dev
 
 api:
+    #!/usr/bin/env sh
+    set -a && . ./.env && set +a
     cd apps/api && ./mvnw spring-boot:run
 
 web:
@@ -37,7 +42,7 @@ watch:
 # ── Code generation ───────────────────────────────────────────────────────────
 
 generate-api:
-    pnpm --filter web generate:api
+    pnpm --filter web generate:api && pnpm --filter web generate:admin-api
 
 # ── Infrastructure ────────────────────────────────────────────────────────────
 

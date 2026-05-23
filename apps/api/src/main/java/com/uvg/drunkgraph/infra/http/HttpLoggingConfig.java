@@ -1,6 +1,5 @@
 package com.uvg.drunkgraph.infra.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,11 +18,6 @@ import java.io.IOException;
 public class HttpLoggingConfig {
 
     private static final Logger log = LoggerFactory.getLogger("http");
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 
     @Bean
     public FilterRegistrationBean<OncePerRequestFilter> requestLoggingFilter() {
