@@ -12,8 +12,8 @@ export default async function DashboardPage() {
 
   return (
     <ClientRecommendationFeed
-      recommendations={recommendations ?? []}
-      hasTastes={hasTastes ?? false}
+      fallbackRecommendations={recommendations ?? []}
+      fallbackHasTastes={hasTastes ?? false}
     />
   )
 }

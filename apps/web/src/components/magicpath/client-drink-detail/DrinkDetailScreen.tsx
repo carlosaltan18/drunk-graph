@@ -8,7 +8,7 @@ import { Drawer } from 'vaul';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
-import { clientApi } from '@/lib/api/client';
+import { useConsumption } from '@/lib/hooks/useConsumption';
 
 type ApiDrink = components['schemas']['Drink'];
 
@@ -73,28 +73,24 @@ const FlavorIntensityDots = ({
 };
 export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scoreFinal = 0 }: Props) => {
   const router = useRouter();
-  const [hasTried, setHasTried] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const sortedFlavors = Object.entries(drink?.flavors ?? {}).sort(([, a], [, b]) => b - a).slice(0, 6);
-  const handleLogDrink = () => {
-    setIsModalOpen(true);
-  };
+
+  const { hasTried, logDrink, removeDrink } = useConsumption();
+  const drinkLogged = hasTried(drink?.id ?? '');
+
+  const handleLogDrink = () => setIsModalOpen(true);
+
   const confirmLog = async () => {
     if (!drink?.id) return;
-    await clientApi.POST('/api/users/me/consumption', {
-      body: { drinkId: drink.id, rating: rating || 1 },
-    });
-    setHasTried(true);
     setIsModalOpen(false);
+    await logDrink(drink.id, rating || 1);
   };
 
   const handleRemoveLog = async () => {
     if (!drink?.id) return;
-    await clientApi.DELETE('/api/users/me/consumption/{drinkId}', {
-      params: { path: { drinkId: drink.id } },
-    });
-    setHasTried(false);
+    await removeDrink(drink.id);
   };
   return <main className="flex flex-col w-full min-h-screen bg-zinc-950 text-white font-sans selection:bg-orange-500/30 overflow-x-hidden pb-24">
       {/* Top Image Section */}
@@ -222,7 +218,7 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
       {/* Sticky Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 z-40">
         <div className="max-w-md mx-auto space-y-2">
-          {!hasTried ? <button onClick={handleLogDrink} className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-orange-400">
+          {!drinkLogged ? <button onClick={handleLogDrink} className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-orange-400">
               I Tried This
               <ArrowRight size={16} strokeWidth={3} />
             </button> : <div className="space-y-2 text-center">

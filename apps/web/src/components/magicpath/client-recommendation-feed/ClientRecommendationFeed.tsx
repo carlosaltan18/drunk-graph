@@ -1,5 +1,7 @@
 'use client';
 import * as React from 'react';
+import { useRecommendations } from '@/lib/hooks/useRecommendations';
+import { useTastes } from '@/lib/hooks/useTastes';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, ArrowRight, Beer, Wine, GlassWater, Flame, ChevronRight } from 'lucide-react';
@@ -92,12 +94,17 @@ const DrinkCard = ({
 // --- Main Component ---
 
 interface Props {
-  recommendations: ApiRecommendation[];
-  hasTastes: boolean;
+  fallbackRecommendations: ApiRecommendation[];
+  fallbackHasTastes: boolean;
 }
 
-export const ClientRecommendationFeed = ({ recommendations, hasTastes }: Props) => {
-  const drinks: DrinkRecommendation[] = recommendations.map(r => ({
+export const ClientRecommendationFeed = ({ fallbackRecommendations, fallbackHasTastes }: Props) => {
+  const { recommendations } = useRecommendations(fallbackRecommendations);
+  const { tastes } = useTastes(fallbackHasTastes ? { _: 1 } : {});
+
+  const hasTastes = Object.keys(tastes).length > 0;
+
+  const drinks: DrinkRecommendation[] = (recommendations ?? []).map(r => ({
     id: r.drinkId ?? '',
     name: r.drink ?? 'Unknown',
     category: (r.category ?? 'cocktail') as DrinkRecommendation['category'],
@@ -105,12 +112,10 @@ export const ClientRecommendationFeed = ({ recommendations, hasTastes }: Props) 
     price: `Q ${r.price?.toFixed(0) ?? '—'}`,
     place: '',
     imageUrl: r.imageUrls?.[0] ?? null,
-  }))
+  }));
 
-  const initialState: 'results' | 'no-profile' | 'no-results' =
-    !hasTastes ? 'no-profile' : drinks.length === 0 ? 'no-results' : 'results'
-
-  const [state, setState] = React.useState<'results' | 'no-profile' | 'no-results'>(initialState);
+  const state: 'results' | 'no-profile' | 'no-results' =
+    !hasTastes ? 'no-profile' : drinks.length === 0 ? 'no-results' : 'results';
   return <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-orange-500/30 pb-32">
       {/* Header */}
       <header className="px-6 pt-12 pb-6">

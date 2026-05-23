@@ -7,6 +7,7 @@ import { BrandButton } from './BrandButton';
 import { cn } from '@/lib/utils';
 import type { components as adminComponents } from '@generated/admin-api/schema.d.ts';
 import Image from 'next/image';
+import { useAdminDrinks } from '@/lib/hooks/useAdminDrinks';
 
 // Types for our drink editor
 interface FlavorProfile {
@@ -60,11 +61,14 @@ function apiToEditorDrink(d: ApiDrink, placeName: string): Drink {
 
 export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: apiDrinks, userEmail }) => {
   const placeName = `${place.name ?? ''} — ${place.location ?? ''}`.trim().replace(/^—\s*/, '')
+  const { updateDrink: saveDrink } = useAdminDrinks(apiDrinks);
   const [drinks, setDrinks] = React.useState<Drink[]>(
     apiDrinks.length ? apiDrinks.map(d => apiToEditorDrink(d, placeName)) : []
   );
   const [currentDrinkIndex, setCurrentDrinkIndex] = React.useState(0);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [savedId, setSavedId] = React.useState<string | null>(null);
 
   const currentDrink = drinks[currentDrinkIndex];
 
@@ -106,6 +110,21 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: apiDrin
         [flavor]: value
       }
     });
+  };
+
+  const handleSave = async () => {
+    if (!currentDrink.id || isSaving) return;
+    setIsSaving(true);
+    await saveDrink(currentDrink.id, {
+      name: currentDrink.name,
+      category: currentDrink.category,
+      price: currentDrink.price,
+      alcoholPct: currentDrink.alcoholPercent,
+      flavors: currentDrink.flavors,
+    });
+    setSavedId(currentDrink.id);
+    setIsSaving(false);
+    setTimeout(() => setSavedId(null), 2000);
   };
   return <div className="flex flex-col h-screen bg-zinc-950 text-white font-sans overflow-hidden">
       <SessionBar type="admin" userName={userEmail.toUpperCase()} venueName={placeName.toUpperCase()} />
@@ -295,12 +314,9 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: apiDrin
 
           {/* Footer Actions */}
           <div className="absolute bottom-0 inset-x-0 p-8 bg-zinc-900 border-t border-white/5 space-y-4">
-            <BrandButton variant="admin" size="xl" className="w-full" showArrow>
-              Publish to Menu
+            <BrandButton variant="admin" size="xl" className="w-full" showArrow onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : savedId === currentDrink.id ? 'Saved!' : 'Save Changes'}
             </BrandButton>
-            <button className="w-full py-2 text-[10px] font-black text-zinc-500 hover:text-zinc-300 uppercase tracking-[0.3em] transition-colors">
-              Save as Draft
-            </button>
           </div>
         </aside>
       </main>

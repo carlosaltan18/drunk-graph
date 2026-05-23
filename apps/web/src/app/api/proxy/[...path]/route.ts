@@ -22,7 +22,7 @@ async function handler(
 
   const { path } = await params
   const search = request.nextUrl.searchParams.toString()
-  const url = `${SPRING_BASE_URL}/api/${path.join("/")}${search ? `?${search}` : ""}`
+  const url = `${SPRING_BASE_URL}/${path.join("/")}${search ? `?${search}` : ""}`
 
   const body = request.method !== "GET" ? await request.text() : undefined
 

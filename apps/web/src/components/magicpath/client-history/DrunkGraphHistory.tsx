@@ -6,7 +6,7 @@ import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
-import { clientApi } from '@/lib/api/client';
+import { useConsumption } from '@/lib/hooks/useConsumption';
 
 type ApiDrink = components['schemas']['Drink'];
 
@@ -24,7 +24,7 @@ interface Drink {
 }
 
 interface Props {
-  drinks: ApiDrink[];
+  fallbackDrinks: ApiDrink[];
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -50,27 +50,25 @@ const RatingStars = ({
 
 // --- Main Component ---
 
-export const DrunkGraphHistory = ({ drinks: apiDrinks }: Props) => {
-  const [drinks, setDrinks] = React.useState<Drink[]>(() =>
-    apiDrinks.map(d => ({
-      id: d.id ?? '',
-      name: d.name ?? 'Unknown',
-      category: (d.category ?? 'cocktail') as Drink['category'],
-      date: '',
-      rating: d.rating ?? 0,
-      venue: d.placeId ?? '—',
-      color: CATEGORY_COLORS[d.category ?? ''] ?? 'from-zinc-700 to-zinc-900',
-      imageUrl: d.imageUrls?.[0] ?? null,
-    }))
-  );
+export const DrunkGraphHistory = ({ fallbackDrinks }: Props) => {
+  const { consumption, removeDrink } = useConsumption(fallbackDrinks);
+
+  const drinks: Drink[] = consumption.map(d => ({
+    id: d.id ?? '',
+    name: d.name ?? 'Unknown',
+    category: (d.category ?? 'cocktail') as Drink['category'],
+    date: '',
+    rating: d.rating ?? 0,
+    venue: d.placeId ?? '—',
+    color: CATEGORY_COLORS[d.category ?? ''] ?? 'from-zinc-700 to-zinc-900',
+    imageUrl: d.imageUrls?.[0] ?? null,
+  }));
+
   const [isSwipedId, setIsSwipedId] = React.useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
-    setDrinks(prev => prev.filter(d => d.id !== id));
     if (isSwipedId === id) setIsSwipedId(null);
-    await clientApi.DELETE('/api/users/me/consumption/{drinkId}', {
-      params: { path: { drinkId: id } },
-    });
+    removeDrink(id);
   };
   const stats = React.useMemo(() => {
     const venues = new Set(drinks.map(d => d.venue)).size;

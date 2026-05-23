@@ -7,5 +7,5 @@ export default async function HistoryPage() {
     params: { query: { limit: 50 } },
   })
 
-  return <DrunkGraphHistory drinks={drinks ?? []} />
+  return <DrunkGraphHistory fallbackDrinks={drinks ?? []} />
 }
