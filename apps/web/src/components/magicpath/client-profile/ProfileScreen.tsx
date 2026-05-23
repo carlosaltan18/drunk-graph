@@ -5,6 +5,8 @@ import { ChevronRight, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
+import { useTastes } from '@/lib/hooks/useTastes';
+import { useConsumption } from '@/lib/hooks/useConsumption';
 import type { components } from '@generated/api/schema.d.ts';
 
 type ApiUser = components['schemas']['User'];
@@ -12,8 +14,8 @@ type ApiDrink = components['schemas']['Drink'];
 
 interface Props {
   user: ApiUser;
-  tastes: Record<string, number>;
-  consumption: ApiDrink[];
+  fallbackTastes: Record<string, number>;
+  fallbackConsumption: ApiDrink[];
 }
 
 const Card = ({ children, className }: { children: React.ReactNode; className?: string }) =>
@@ -30,8 +32,10 @@ const FlavorRow = ({ name, score }: { name: string; score: number }) =>
     </div>
   </div>;
 
-export const ProfileScreen = ({ user, tastes, consumption }: Props) => {
+export const ProfileScreen = ({ user, fallbackTastes, fallbackConsumption }: Props) => {
   const router = useRouter();
+  const { tastes } = useTastes(fallbackTastes);
+  const { consumption } = useConsumption(fallbackConsumption);
 
   const sortedTastes = Object.entries(tastes).sort(([, a], [, b]) => b - a);
 

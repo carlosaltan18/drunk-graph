@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { createAdminApi } from "@/lib/api/admin"
@@ -6,9 +5,7 @@ import { AdminDrinkEditor } from "@/components/magicpath/admin-venue-list/AdminD
 
 export default async function PlacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const reqHeaders = await headers()
-  const session = await adminAuth.api.getSession({ headers: reqHeaders })
-  if (session?.user.role !== "admin") redirect("/admin/login")
+  const session = await adminAuth.api.getSession({ headers: await headers() })
 
   const api = await createAdminApi()
   const [{ data: places }, { data: drinks }] = await Promise.all([
@@ -23,7 +20,7 @@ export default async function PlacePage({ params }: { params: Promise<{ id: stri
     <AdminDrinkEditor
       place={place ?? { id, name: id }}
       drinks={placeDrinks}
-      userEmail={session.user.email}
+      userEmail={session!.user.email}
     />
   )
 }
