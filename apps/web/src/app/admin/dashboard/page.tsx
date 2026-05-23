@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation"
 import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
+import { createAdminApi } from "@/lib/api/admin"
+import { AdminVenueList } from "@/components/magicpath/admin-venue-list/AdminVenueList"
 
 export default async function AdminDashboard() {
-  const session = await adminAuth.api.getSession({ headers: await headers() })
-
+  const reqHeaders = await headers()
+  const session = await adminAuth.api.getSession({ headers: reqHeaders })
   if (session?.user.role !== "admin") redirect("/admin/login")
 
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <p className="text-sm text-zinc-500">Backoffice — coming soon</p>
-    </main>
-  )
+  const api = await createAdminApi()
+  const { data: places } = await api.GET("/api/admin/places")
+
+  return <AdminVenueList places={places ?? []} userEmail={session.user.email} />
 }

@@ -25,22 +25,24 @@ export default function SessionBar({ email, role, otherSession }: Props) {
   const isAdmin = role === "admin"
 
   return (
-    <div className={`w-full px-4 py-2 flex items-center gap-3 text-sm ${
+    <div className={`w-full px-4 py-2 flex items-center gap-3 text-sm border-b ${
       isAdmin
-        ? "bg-amber-400 text-amber-950"
-        : "bg-zinc-100 text-zinc-600 border-b border-zinc-200"
+        ? "bg-primary text-primary-foreground border-primary/30"
+        : "bg-card text-foreground border-border"
     }`}>
-      {isAdmin && <span className="font-bold tracking-widest text-xs">⚠ BACKOFFICE</span>}
-      <span className={`font-medium ${isAdmin ? "text-amber-900" : "text-zinc-800"}`}>{email}</span>
+      {isAdmin && (
+        <span className="font-bold tracking-widest text-xs opacity-80">⚠ BACKOFFICE</span>
+      )}
+      <span className="font-medium truncate">{email}</span>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 shrink-0">
         {otherSession && (
           <button
             onClick={switchSession}
-            className={`text-xs px-2 py-1 rounded font-medium ${
+            className={`text-xs px-2 py-1 rounded-md font-medium transition-colors ${
               isAdmin
-                ? "bg-amber-300 hover:bg-amber-200 text-amber-950"
-                : "bg-zinc-200 hover:bg-zinc-300 text-zinc-700"
+                ? "bg-black/10 hover:bg-black/20"
+                : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
             }`}
           >
             {otherSession.role === "admin" ? "Switch to backoffice ↗" : "Switch to user app ↗"}
@@ -48,10 +50,10 @@ export default function SessionBar({ email, role, otherSession }: Props) {
         )}
         <button
           onClick={signOut}
-          className={`text-xs px-2 py-1 rounded font-medium ${
+          className={`text-xs px-2 py-1 rounded-md font-medium transition-colors ${
             isAdmin
-              ? "bg-amber-300 hover:bg-amber-200 text-amber-950"
-              : "bg-zinc-200 hover:bg-zinc-300 text-zinc-700"
+              ? "bg-black/10 hover:bg-black/20"
+              : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
           }`}
         >
           Sign out

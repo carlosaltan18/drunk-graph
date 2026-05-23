@@ -1,0 +1,13 @@
+{
+  "name": "mock-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "express": "^5.1.0"
+  }
+}
