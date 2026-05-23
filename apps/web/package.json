@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "generate:api": "openapi-typescript ../../apps/api/openapi/openapi.json -o generated/api/schema.d.ts"
+    "generate:api": "openapi-typescript ../../apps/api/openapi/client.json -o generated/api/schema.d.ts",
+    "generate:admin-api": "openapi-typescript ../../apps/api/openapi/admin.json -o generated/admin-api/schema.d.ts"
   },
   "dependencies": {
     "better-auth": "^1.6.11",

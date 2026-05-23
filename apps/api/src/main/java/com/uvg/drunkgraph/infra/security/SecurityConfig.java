@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/docs", "/docs.html", "/v3/api-docs/**", "/error", "/api/health").permitAll()
+                        .requestMatchers("/client/docs", "/admin/docs", "/client-docs.html", "/admin-docs.html", "/v3/api-docs/**", "/error", "/api/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

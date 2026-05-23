@@ -39,7 +39,7 @@ watch:
 # ── Code generation ───────────────────────────────────────────────────────────
 
 generate-api:
-    pnpm --filter web generate:api
+    pnpm --filter web generate:api && pnpm --filter web generate:admin-api
 
 # ── Infrastructure ────────────────────────────────────────────────────────────
 

@@ -15,34 +15,36 @@ import java.util.HexFormat;
 @Component
 public class OpenApiChangeNotifier {
 
-    private static final Path SPEC_PATH = Path.of("openapi/openapi.json");
-    private static final Path HASH_PATH = Path.of("openapi/.openapi-hash");
-
     private final RestClient http = RestClient.create();
 
     @EventListener(ContextRefreshedEvent.class)
     public void onContextRefreshed() {
+        exportSpec("client", Path.of("openapi/client.json"), Path.of("openapi/.client-hash"));
+        exportSpec("admin",  Path.of("openapi/admin.json"),  Path.of("openapi/.admin-hash"));
+    }
+
+    private void exportSpec(String group, Path specPath, Path hashPath) {
         try {
             String spec = http.get()
-                .uri("http://localhost:8080/v3/api-docs")
+                .uri("http://localhost:8080/v3/api-docs/" + group)
                 .retrieve()
                 .body(String.class);
 
             if (spec == null) return;
 
             String hash = sha256(spec);
-            String previousHash = Files.exists(HASH_PATH)
-                ? Files.readString(HASH_PATH).trim()
+            String previousHash = Files.exists(hashPath)
+                ? Files.readString(hashPath).trim()
                 : "";
 
             if (hash.equals(previousHash)) return;
 
-            Files.writeString(SPEC_PATH, spec);
-            Files.writeString(HASH_PATH, hash);
-            System.out.println("[openapi] Spec changed, wrote target/openapi.json");
+            Files.writeString(specPath, spec);
+            Files.writeString(hashPath, hash);
+            System.out.println("[openapi] " + group + " spec changed, wrote " + specPath);
 
         } catch (Exception e) {
-            System.out.println("[openapi] Could not export spec: " + e.getMessage());
+            System.out.println("[openapi] Could not export " + group + " spec: " + e.getMessage());
         }
     }
 
