@@ -8,12 +8,10 @@ export default async function DashboardPage() {
     api.GET("/api/users/me/tastes"),
   ])
 
-  const hasTastes = tastes && Object.keys(tastes).length > 0
-
   return (
     <ClientRecommendationFeed
       fallbackRecommendations={recommendations ?? []}
-      fallbackHasTastes={hasTastes ?? false}
+      fallbackTastes={tastes ?? {}}
     />
   )
 }

@@ -13,10 +13,12 @@ import { useRecommendation } from '@/lib/hooks/useRecommendation';
 
 type ApiDrink = components['schemas']['Drink'];
 type ApiRecommendation = components['schemas']['Recommendation'];
+type PagedConsumedDrink = components['schemas']['PagedResultConsumedDrink'];
 
 interface Props {
   drink?: ApiDrink | null;
   fallbackRecommendation?: ApiRecommendation;
+  fallbackConsumption?: PagedConsumedDrink;
 }
 
 // Sub-components
@@ -71,13 +73,13 @@ const FlavorIntensityDots = ({
     }).map((_, i) => <div key={i} className={cn("w-2 h-2 rounded-full", i < filledDots ? "bg-orange-500" : "bg-zinc-700")} />)}
     </div>;
 };
-export const DrinkDetailScreen = ({ drink, fallbackRecommendation }: Props) => {
+export const DrinkDetailScreen = ({ drink, fallbackRecommendation, fallbackConsumption }: Props) => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const sortedFlavors = Object.entries(drink?.flavors ?? {}).sort(([, a], [, b]) => b - a).slice(0, 6);
 
-  const { hasTried, logDrink, removeDrink } = useConsumption();
+  const { hasTried, logDrink, removeDrink } = useConsumption(fallbackConsumption?.elements);
   const drinkLogged = hasTried(drink?.id ?? '');
 
   const { recommendation } = useRecommendation(drink?.id ?? '', fallbackRecommendation);
@@ -137,7 +139,7 @@ export const DrinkDetailScreen = ({ drink, fallbackRecommendation }: Props) => {
             <div className="flex items-center gap-1 text-zinc-500">
               <MapPin size={12} className="text-zinc-500" />
               <span className="text-[10px] uppercase tracking-wide">
-                Served at: <span className="text-zinc-300 font-medium">{drink?.placeId}</span>
+                Served at: <span className="text-zinc-300 font-medium">{drink?.placeName ?? drink?.placeId}</span>
               </span>
             </div>
           </div>

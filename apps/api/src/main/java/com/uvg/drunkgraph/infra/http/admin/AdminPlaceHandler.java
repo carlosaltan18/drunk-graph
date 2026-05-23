@@ -3,13 +3,13 @@ package com.uvg.drunkgraph.infra.http.admin;
 import com.uvg.drunkgraph.modules.place.dto.PlaceRequest;
 import com.uvg.drunkgraph.modules.place.model.Place;
 import com.uvg.drunkgraph.modules.place.service.IAdminPlaceService;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -24,7 +24,7 @@ public class AdminPlaceHandler {
 
     @Operation(operationId = "listPlaces")
     @GetMapping
-    public List<Place> listAll(
+    public PagedResult<Place> listAll(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int limit) {

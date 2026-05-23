@@ -10,16 +10,15 @@ export default async function PlacePage({ params }: { params: Promise<{ id: stri
   const api = await createAdminApi()
   const [{ data: places }, { data: drinks }] = await Promise.all([
     api.GET("/api/admin/places"),
-    api.GET("/api/admin/drinks"),
+    api.GET("/api/admin/drinks", { params: { query: { placeId: id } } }),
   ])
 
-  const place = places?.find(p => p.id === id)
-  const placeDrinks = (drinks ?? []).filter(d => d.placeId === id)
+  const place = places?.elements?.find(p => p.id === id)
 
   return (
     <AdminDrinkEditor
       place={place ?? { id, name: id }}
-      drinks={placeDrinks}
+      drinks={drinks ?? {}}
       userEmail={session!.user.email}
     />
   )

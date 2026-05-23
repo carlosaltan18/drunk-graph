@@ -31,10 +31,11 @@ interface Drink {
 const CATEGORIES = ['Cocktail', 'Beer', 'Spirit', 'Wine', 'Non-Alcoholic'];
 type ApiDrink = adminComponents['schemas']['Drink'];
 type ApiPlace = adminComponents['schemas']['Place'];
+type PagedResultDrink = adminComponents['schemas']['PagedResultDrink'];
 
 interface EditorProps {
   place: ApiPlace;
-  drinks: ApiDrink[];
+  drinks: PagedResultDrink;
   userEmail: string;
 }
 
@@ -59,9 +60,10 @@ function apiToEditorDrink(d: ApiDrink, placeName: string): Drink {
   };
 }
 
-export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: apiDrinks, userEmail }) => {
+export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: pagedDrinks, userEmail }) => {
   const placeName = `${place.name ?? ''} — ${place.location ?? ''}`.trim().replace(/^—\s*/, '')
-  const { updateDrink: saveDrink } = useAdminDrinks(apiDrinks);
+  const apiDrinks: ApiDrink[] = pagedDrinks.elements ?? [];
+  const { updateDrink: saveDrink } = useAdminDrinks(place.id ?? null, pagedDrinks);
   const [drinks, setDrinks] = React.useState<Drink[]>(
     apiDrinks.length ? apiDrinks.map(d => apiToEditorDrink(d, placeName)) : []
   );
@@ -118,6 +120,7 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: apiDrin
     await saveDrink(currentDrink.id, {
       name: currentDrink.name,
       category: currentDrink.category,
+      placeId: place.id ?? '',
       price: currentDrink.price,
       alcoholPct: currentDrink.alcoholPercent,
       flavors: currentDrink.flavors,

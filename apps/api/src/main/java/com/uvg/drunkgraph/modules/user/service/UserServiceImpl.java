@@ -1,6 +1,7 @@
 package com.uvg.drunkgraph.modules.user.service;
 
-import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
+import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
@@ -8,7 +9,6 @@ import com.uvg.drunkgraph.modules.user.model.User;
 import com.uvg.drunkgraph.modules.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -57,13 +57,18 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public List<Drink> getConsumedDrinks(String userId, int page, int limit) {
+    public PagedResult<ConsumedDrink> getConsumedDrinks(String userId, int page, int limit) {
         findById(userId);
         return repo.getConsumedDrinks(userId, page, limit);
     }
 
     @Override
     public User updatePreferences(String userId, com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest request) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public com.uvg.drunkgraph.modules.user.dto.UserStats getStats(String userId) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

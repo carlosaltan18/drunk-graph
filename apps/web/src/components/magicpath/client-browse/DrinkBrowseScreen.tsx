@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { useDrinks } from '@/lib/hooks/useDrinks';
 import type { components } from '@generated/api/schema.d.ts';
 
+type ApiDrink = components['schemas']['Drink'];
+
 interface Drink {
   id: string;
   name: string;

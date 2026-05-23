@@ -5,12 +5,13 @@ export default async function DrinkDetailPage({ params }: { params: Promise<{ id
   const { id } = await params
   const api = await createServerApi()
 
-  const [{ data: drink }, { data: recommendation }] = await Promise.all([
+  const [{ data: drink }, { data: recommendation }, { data: consumption }] = await Promise.all([
     api.GET("/api/drinks/{id}", { params: { path: { id } } }),
     api.GET("/api/users/me/recommendations/{drinkId}", { params: { path: { drinkId: id } } }),
+    api.GET("/api/users/me/consumption", { params: { query: { limit: 100 } } }),
   ])
 
   if (!drink) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">Drink not found</div>
 
-  return <DrinkDetailScreen drink={drink} fallbackRecommendation={recommendation ?? undefined} />
+  return <DrinkDetailScreen drink={drink} fallbackRecommendation={recommendation ?? undefined} fallbackConsumption={consumption ?? undefined} />
 }

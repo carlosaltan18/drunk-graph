@@ -9,5 +9,5 @@ export default async function AdminDashboard() {
   const api = await createAdminApi()
   const { data: places } = await api.GET("/api/admin/places")
 
-  return <AdminVenueList places={places ?? []} userEmail={session!.user.email} />
+  return <AdminVenueList places={places ?? {}} userEmail={session!.user.email} />
 }

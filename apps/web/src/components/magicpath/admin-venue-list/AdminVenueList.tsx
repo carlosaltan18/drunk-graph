@@ -9,13 +9,15 @@ import { BrandButton } from './BrandButton';
 import type { components } from '@generated/admin-api/schema.d.ts';
 
 type Place = components['schemas']['Place'];
+type PagedResultPlace = components['schemas']['PagedResultPlace'];
 
 interface Props {
-  places: Place[];
+  places: PagedResultPlace;
   userEmail: string;
 }
 
 export const AdminVenueList: React.FC<Props> = ({ places, userEmail }) => {
+  const placeList: Place[] = places.elements ?? [];
   return <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-amber-400 selection:text-black">
       <SessionBar type="admin" userName={userEmail.toUpperCase()} venueName="ROOT ACCESS" />
 
@@ -37,13 +39,13 @@ export const AdminVenueList: React.FC<Props> = ({ places, userEmail }) => {
           </Link>
         </header>
 
-        {!places.length ? (
+        {!placeList.length ? (
           <div className="flex flex-col items-center justify-center py-32 text-center gap-4">
             <p className="text-zinc-600 font-black uppercase tracking-widest text-sm">No venues yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {places.map(place => (
+            {placeList.map(place => (
               <div key={place.id} className="relative">
                 <ActionCard title={place.name ?? ''} subtitle={place.location} variant="admin">
                   <div className="flex flex-col gap-6">

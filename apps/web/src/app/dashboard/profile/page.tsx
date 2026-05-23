@@ -3,17 +3,17 @@ import { ProfileScreen } from '@/components/magicpath/client-profile/ProfileScre
 
 export default async function ProfilePage() {
   const api = await createServerApi();
-  const [{ data: user }, { data: tastes }, { data: consumption }] = await Promise.all([
+  const [{ data: user }, { data: tastes }, { data: stats }] = await Promise.all([
     api.GET('/api/users/me'),
     api.GET('/api/users/me/tastes'),
-    api.GET('/api/users/me/consumption', { params: { query: { limit: 100 } } }),
+    api.GET('/api/users/me/stats'),
   ]);
 
   return (
     <ProfileScreen
-      user={user ?? {}}
+      fallbackUser={user ?? {}}
       fallbackTastes={tastes ?? {}}
-      fallbackConsumption={consumption ?? []}
+      fallbackStats={stats ?? {}}
     />
   );
 }

@@ -95,12 +95,12 @@ const DrinkCard = ({
 
 interface Props {
   fallbackRecommendations: ApiRecommendation[];
-  fallbackHasTastes: boolean;
+  fallbackTastes: Record<string, number>;
 }
 
-export const ClientRecommendationFeed = ({ fallbackRecommendations, fallbackHasTastes }: Props) => {
+export const ClientRecommendationFeed = ({ fallbackRecommendations, fallbackTastes }: Props) => {
   const { recommendations } = useRecommendations(fallbackRecommendations);
-  const { tastes } = useTastes(fallbackHasTastes ? { _: 1 } : {});
+  const { tastes } = useTastes(fallbackTastes);
 
   const hasTastes = Object.keys(tastes).length > 0;
 

@@ -6,16 +6,17 @@ import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth-client';
 import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
 import { useTastes } from '@/lib/hooks/useTastes';
-import { useConsumption } from '@/lib/hooks/useConsumption';
+import { usePreferences } from '@/lib/hooks/usePreferences';
+import { useStats } from '@/lib/hooks/useStats';
 import type { components } from '@generated/api/schema.d.ts';
 
 type ApiUser = components['schemas']['User'];
-type ApiDrink = components['schemas']['Drink'];
+type UserStats = components['schemas']['UserStats'];
 
 interface Props {
-  user: ApiUser;
+  fallbackUser: ApiUser;
   fallbackTastes: Record<string, number>;
-  fallbackConsumption: ApiDrink[];
+  fallbackStats: UserStats;
 }
 
 const Card = ({ children, className }: { children: React.ReactNode; className?: string }) =>
@@ -32,24 +33,14 @@ const FlavorRow = ({ name, score }: { name: string; score: number }) =>
     </div>
   </div>;
 
-export const ProfileScreen = ({ user, fallbackTastes, fallbackConsumption }: Props) => {
+export const ProfileScreen = ({ fallbackUser, fallbackTastes, fallbackStats }: Props) => {
   const router = useRouter();
+  const { preferences: user } = usePreferences(fallbackUser);
   const { tastes } = useTastes(fallbackTastes);
-  const { consumption } = useConsumption(fallbackConsumption);
+  const { stats } = useStats(fallbackStats);
 
   const sortedTastes = Object.entries(tastes).sort(([, a], [, b]) => b - a);
-
-  const stats = React.useMemo(() => {
-    const venues = new Set(consumption.map(d => d.placeId).filter(Boolean)).size;
-    const categories = consumption.reduce((acc, d) => {
-      if (d.category) acc[d.category] = (acc[d.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const favCategory = Object.entries(categories).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '—';
-    return { tried: consumption.length, venues, favCategory };
-  }, [consumption]);
-
-  const initial = (user.alias ?? user.id ?? '?')[0].toUpperCase();
+  const initial = (user?.alias ?? user?.id ?? '?')[0].toUpperCase();
 
   const handleSignOut = () => {
     authClient.signOut({
@@ -71,17 +62,17 @@ export const ProfileScreen = ({ user, fallbackTastes, fallbackConsumption }: Pro
           </div>
         </div>
         <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight uppercase">{user.alias ?? 'Anonymous'}</h1>
-          {user.age && <p className="text-zinc-500 text-sm font-medium">age {user.age}</p>}
+          <h1 className="text-2xl font-black tracking-tight uppercase">{user?.alias ?? 'Anonymous'}</h1>
+          {user?.age && <p className="text-zinc-500 text-sm font-medium">age {user.age}</p>}
         </div>
       </section>
 
       {/* Stats strip */}
       <Card className="grid grid-cols-3 p-0 overflow-hidden shadow-xl shadow-black/20">
         {[
-          { value: String(stats.tried), label: 'TRIED' },
-          { value: String(stats.venues), label: 'VENUES' },
-          { value: stats.favCategory.slice(0, 6).toUpperCase(), label: 'FAV TYPE' },
+          { value: String(stats?.tried ?? '—'), label: 'TRIED' },
+          { value: String(stats?.venues ?? '—'), label: 'VENUES' },
+          { value: (stats?.favCategory ?? '—').slice(0, 6).toUpperCase(), label: 'FAV TYPE' },
         ].map((stat, idx, arr) => (
           <div key={stat.label} className={cn('flex flex-col items-center justify-center py-4 px-1 text-center', idx < arr.length - 1 && 'border-r border-zinc-800')}>
             <span className="text-orange-500 text-xl font-black tracking-tight leading-none mb-1">{stat.value}</span>
@@ -120,10 +111,10 @@ export const ProfileScreen = ({ user, fallbackTastes, fallbackConsumption }: Pro
         <h3 className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-4">Account</h3>
         <Card className="p-0 px-5">
           {[
-            { label: 'Max per drink', value: user.budgetMax != null ? `Q ${user.budgetMax}` : '—' },
+            { label: 'Max per drink', value: user?.budgetMax != null ? `Q ${user.budgetMax}` : '—' },
             {
               label: 'Preference',
-              value: user.prefersAlcohol === false
+              value: user?.prefersAlcohol === false
                 ? <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-bold uppercase rounded-md border border-green-500/20">Non-alcoholic</span>
                 : <span className="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase rounded-md border border-orange-500/20">Alcoholic</span>,
             },

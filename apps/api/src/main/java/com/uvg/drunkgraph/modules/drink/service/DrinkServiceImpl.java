@@ -5,6 +5,7 @@ import com.uvg.drunkgraph.modules.drink.dto.DrinkEditRequest;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,12 +20,12 @@ public class DrinkServiceImpl implements IDrinkService {
     }
 
     @Override
-    public List<Drink> listAll(String search, int page, int limit) {
-        return drinkRepo.listAllWithFlavors(search, page, limit);
+    public PagedResult<Drink> listAll(String placeId, String search, int page, int limit) {
+        return drinkRepo.listAllWithFlavors(placeId, search, page, limit);
     }
 
     @Override
-    public List<Drink> findByCategory(String category, String search, int page, int limit) {
+    public PagedResult<Drink> findByCategory(String category, String search, int page, int limit) {
         return drinkRepo.findByCategory(category, search, page, limit);
     }
 

@@ -30,11 +30,15 @@ function fakeFlavors() {
 }
 
 function fakeDrink(placeId) {
+  const place = placeId
+    ? PLACES.find(p => p.id === placeId) ?? PLACES[0]
+    : faker.helpers.arrayElement(PLACES)
   return {
     id: faker.string.uuid(),
     name: `${faker.word.adjective()} ${faker.word.noun()}`,
     category: faker.helpers.arrayElement(CATEGORIES),
-    placeId: placeId ?? faker.helpers.arrayElement(PLACES).id,
+    placeId: place.id,
+    placeName: place.name,
     alcoholPct: faker.number.float({ min: 0, max: 45, fractionDigits: 1 }),
     price: faker.number.float({ min: 20, max: 200, fractionDigits: 2 }),
     flavors: fakeFlavors(),
@@ -58,8 +62,33 @@ function fakeRecommendation() {
   }
 }
 
+function fakeConsumedDrink() {
+  const place = faker.helpers.arrayElement(PLACES)
+  return {
+    id: faker.string.uuid(),
+    name: `${faker.word.adjective()} ${faker.word.noun()}`,
+    category: faker.helpers.arrayElement(CATEGORIES),
+    placeId: place.id,
+    placeName: place.name,
+    price: faker.number.float({ min: 20, max: 200, fractionDigits: 2 }),
+    rating: faker.number.int({ min: 1, max: 5 }),
+    date: faker.date.recent({ days: 60 }).toISOString().split('T')[0],
+    flavors: fakeFlavors(),
+    imageUrls: Array.from({ length: faker.number.int({ min: 1, max: 2 }) }, () =>
+      faker.image.urlPicsumPhotos({ width: 400, height: 400 })
+    ),
+  }
+}
+
 function fakeFlavor() {
   return { name: faker.helpers.arrayElement(FLAVORS), description: faker.lorem.sentence() }
+}
+
+function paged(req, items) {
+  const page = parseInt(req.query.page ?? "0")
+  const limit = parseInt(req.query.limit ?? "20")
+  const start = page * limit
+  return { elements: items.slice(start, start + limit), total: items.length, page, limit }
 }
 
 // ── Route handlers keyed by operationId ──────────────────────────────────────
@@ -79,10 +108,15 @@ const handlers = {
   removeTaste: () => ({ message: "Taste removed" }),
   getRecommendations: () => Array.from({ length: faker.number.int({ min: 5, max: 10 }) }, fakeRecommendation),
   getRecommendation: (req) => ({ ...fakeRecommendation(), drinkId: req.params.drinkId }),
-  getMyConsumption: () => Array.from({ length: faker.number.int({ min: 3, max: 8 }) }, () => fakeDrink()),
+  getMyStats: () => ({
+    tried: faker.number.int({ min: 1, max: 40 }),
+    venues: faker.number.int({ min: 1, max: 4 }),
+    favCategory: faker.helpers.arrayElement(CATEGORIES),
+  }),
+  getMyConsumption: (req) => paged(req, Array.from({ length: faker.number.int({ min: 3, max: 8 }) }, fakeConsumedDrink)),
   logConsumption: () => ({ message: "Consumption recorded" }),
   removeConsumption: () => ({ message: "Consumption removed" }),
-updatePreferences: (req) => ({
+  updatePreferences: (req) => ({
     id: faker.string.uuid(),
     alias: faker.internet.username(),
     age: faker.number.int({ min: 18, max: 45 }),
@@ -90,17 +124,21 @@ updatePreferences: (req) => ({
     prefersAlcohol: req.body?.prefersAlcohol ?? faker.datatype.boolean(),
     tastes: fakeFlavors(),
   }),
-  listDrinks: () => Array.from({ length: faker.number.int({ min: 8, max: 15 }) }, () => fakeDrink()),
+  listDrinks: (req) => paged(req, Array.from({ length: faker.number.int({ min: 8, max: 15 }) }, () => fakeDrink())),
   getDrink: () => fakeDrink(),
-  listDrinksByCategory: () => Array.from({ length: faker.number.int({ min: 4, max: 10 }) }, () => fakeDrink()),
+  listDrinksByCategory: (req) => paged(req, Array.from({ length: faker.number.int({ min: 4, max: 10 }) }, () => fakeDrink())),
   listFlavors: () => FLAVORS.map(name => ({ name, description: faker.lorem.sentence() })),
 
   // admin
-  listPlaces: () => PLACES,
+  listPlaces: (req) => paged(req, PLACES),
   createPlace: (req) => ({ id: faker.string.uuid(), ...req.body }),
   updatePlace: (req) => ({ id: req.params.id, ...req.body }),
   deletePlace: () => ({ message: "Place deleted" }),
-  adminListDrinks: () => Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, () => fakeDrink()),
+  adminListDrinks: (req) => {
+    const all = Array.from({ length: faker.number.int({ min: 5, max: 15 }) }, () => fakeDrink())
+    const filtered = req.query.placeId ? all.filter(d => d.placeId === req.query.placeId) : all
+    return paged(req, filtered)
+  },
   adminGetDrink: () => fakeDrink(),
   importDrinks: (req) => Array.from({ length: req.body?.drinks?.length ?? 3 }, () => fakeDrink(req.params.placeId)),
   updateDrink: (req) => ({ ...fakeDrink(), id: req.params.id, ...req.body }),

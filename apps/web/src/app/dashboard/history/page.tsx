@@ -3,9 +3,10 @@ import { DrunkGraphHistory } from "@/components/magicpath/client-history/DrunkGr
 
 export default async function HistoryPage() {
   const api = await createServerApi()
-  const { data: drinks } = await api.GET("/api/users/me/consumption", {
-    params: { query: { limit: 50 } },
-  })
+  const [{ data: consumed }, { data: stats }] = await Promise.all([
+    api.GET("/api/users/me/consumption", { params: { query: { limit: 50 } } }),
+    api.GET("/api/users/me/stats"),
+  ])
 
-  return <DrunkGraphHistory fallbackDrinks={drinks ?? []} />
+  return <DrunkGraphHistory fallbackConsumption={consumed ?? {}} fallbackStats={stats ?? {}} />
 }

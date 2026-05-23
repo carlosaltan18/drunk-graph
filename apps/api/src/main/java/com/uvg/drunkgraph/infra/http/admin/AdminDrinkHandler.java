@@ -4,6 +4,7 @@ import com.uvg.drunkgraph.modules.drink.dto.DrinkBatchRequest;
 import com.uvg.drunkgraph.modules.drink.dto.DrinkEditRequest;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.service.IDrinkService;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,11 +26,12 @@ public class AdminDrinkHandler {
 
     @Operation(operationId = "adminListDrinks")
     @GetMapping("/drinks")
-    public List<Drink> listAll(
+    public PagedResult<Drink> listAll(
+            @RequestParam(required = false) String placeId,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int limit) {
-        return service.listAll(search, page, limit);
+        return service.listAll(placeId, search, page, limit);
     }
 
     @Operation(operationId = "adminGetDrink")

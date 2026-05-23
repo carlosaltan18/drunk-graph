@@ -1,7 +1,10 @@
 package com.uvg.drunkgraph.modules.user.repository;
 
+import com.uvg.drunkgraph.infra.cloudinary.ImageResolver;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
+import com.uvg.drunkgraph.modules.shared.PagedResult;
+import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
 import com.uvg.drunkgraph.modules.user.model.User;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
@@ -13,9 +16,11 @@ import java.util.stream.Collectors;
 public class UserRepository {
 
     private final Neo4jClient neo4j;
+    private final ImageResolver imageResolver;
 
-    public UserRepository(Neo4jClient neo4j) {
+    public UserRepository(Neo4jClient neo4j, ImageResolver imageResolver) {
         this.neo4j = neo4j;
+        this.imageResolver = imageResolver;
     }
 
     private static User mapUser(org.neo4j.driver.Record row) {
@@ -157,30 +162,56 @@ public class UserRepository {
                 .run();
     }
 
-    public List<Drink> getConsumedDrinks(String userId, int page, int limit) {
-        return new ArrayList<>(neo4j.query("""
+    public PagedResult<ConsumedDrink> getConsumedDrinks(String userId, int page, int limit) {
+        long total = neo4j.query("""
                 MATCH (u:User {id: $userId})-[:CONSUMED]->(d:Drink)
-                OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
+                RETURN count(d) AS total
+                """)
+                .bind(userId).to("userId")
+                .fetchAs(Long.class)
+                .mappedBy((ts, row) -> row.get("total").asLong())
+                .one()
+                .orElse(0L);
+
+        List<ConsumedDrink> elements = new ArrayList<>(neo4j.query("""
+                MATCH (u:User {id: $userId})-[c:CONSUMED]->(d:Drink)
+                OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
+                OPTIONAL MATCH (d)-[hf:HAS_FLAVOR]->(f:Flavor)
                 RETURN d.id AS id, d.name AS name,
                        d.category AS category,
-                       d.alcohol_pct AS alcohol,
                        d.price AS price,
-                       collect({flavor: f.name, intensity: r.intensity}) AS flavors
-                ORDER BY d.name
+                       d.images AS images,
+                       p.id AS placeId,
+                       p.name AS placeName,
+                       c.rating AS rating,
+                       c.date AS date,
+                       collect({flavor: f.name, intensity: hf.intensity}) AS flavors
+                ORDER BY c.date DESC
                 SKIP $skip LIMIT $limit
                 """)
                 .bind(userId).to("userId")
                 .bind((long) page * limit).to("skip")
                 .bind((long) limit).to("limit")
-                .fetchAs(Drink.class)
-                .mappedBy((ts, row) -> Drink.builder()
-                        .id(row.get("id").asString())
-                        .name(row.get("name").asString())
-                        .category(row.get("category").asString())
-                        .alcoholPct(row.get("alcohol").asDouble())
-                        .price(row.get("price").asDouble())
-                        .flavors(DrinkRepository.mapFlavors(row.get("flavors")))
-                        .build())
+                .fetchAs(ConsumedDrink.class)
+                .mappedBy((ts, row) -> {
+                    List<String> publicIds = row.get("images").isNull()
+                            ? List.of()
+                            : row.get("images").asList(v -> v.asString());
+                    return ConsumedDrink.builder()
+                            .id(row.get("id").asString())
+                            .name(row.get("name").asString())
+                            .category(row.get("category").asString())
+                            .price(row.get("price").asDouble())
+                            .placeId(row.get("placeId").isNull() ? null : row.get("placeId").asString())
+                            .placeName(row.get("placeName").isNull() ? null : row.get("placeName").asString())
+                            .rating(row.get("rating").isNull() ? 0 : row.get("rating").asInt())
+                            .date(row.get("date").isNull() ? null : row.get("date").asLocalDate())
+                            .imageUrls(imageResolver.resolve(publicIds))
+                            .flavors(DrinkRepository.mapFlavors(row.get("flavors")))
+                            .build();
+                })
                 .all());
+
+        return new PagedResult<>(elements, total, page, limit);
     }
 }
