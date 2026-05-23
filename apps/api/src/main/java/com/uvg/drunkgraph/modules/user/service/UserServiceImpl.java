@@ -61,4 +61,10 @@ public class UserServiceImpl implements IUserService {
         findById(userId);
         return repo.getConsumedDrinks(userId, page, limit);
     }
+
+    @Override
+    public User updatePreferences(String userId, com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest request) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
 }

@@ -2,9 +2,11 @@ package com.uvg.drunkgraph.infra.http.client;
 
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
+import com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
+import com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest;
 import com.uvg.drunkgraph.modules.user.model.User;
 import com.uvg.drunkgraph.modules.user.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,7 +77,19 @@ public class UserHandler {
         return ResponseEntity.ok(Map.of("message", "Consumption removed"));
     }
 
-    @Operation(operationId = "getMyConsumption")
+    @Operation(
+        operationId = "updatePreferences",
+        summary = "Upsert user preferences",
+        description = "Idempotent. Sets budgetMax and prefersAlcohol on the current user. Safe to call multiple times with the same payload."
+    )
+    @PutMapping
+    public User updatePreferences(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody UserPreferencesRequest request) {
+        return service.updatePreferences(jwt.getSubject(), request);
+    }
+
+@Operation(operationId = "getMyConsumption")
     @GetMapping("/consumption")
     public List<Drink> getConsumedDrinks(
             @AuthenticationPrincipal Jwt jwt,

@@ -9,14 +9,14 @@ import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
 import { useConsumption } from '@/lib/hooks/useConsumption';
+import { useRecommendation } from '@/lib/hooks/useRecommendation';
 
 type ApiDrink = components['schemas']['Drink'];
+type ApiRecommendation = components['schemas']['Recommendation'];
 
 interface Props {
   drink?: ApiDrink | null;
-  scoreFlavor?: number;
-  scorePrice?: number;
-  scoreFinal?: number;
+  fallbackRecommendation?: ApiRecommendation;
 }
 
 // Sub-components
@@ -71,7 +71,7 @@ const FlavorIntensityDots = ({
     }).map((_, i) => <div key={i} className={cn("w-2 h-2 rounded-full", i < filledDots ? "bg-orange-500" : "bg-zinc-700")} />)}
     </div>;
 };
-export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scoreFinal = 0 }: Props) => {
+export const DrinkDetailScreen = ({ drink, fallbackRecommendation }: Props) => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
@@ -79,6 +79,12 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
 
   const { hasTried, logDrink, removeDrink } = useConsumption();
   const drinkLogged = hasTried(drink?.id ?? '');
+
+  const { recommendation } = useRecommendation(drink?.id ?? '', fallbackRecommendation);
+  const scoreFlavor = recommendation?.scoreFlavor ?? 0;
+  const scorePrice = recommendation?.scorePrice ?? 0;
+  const scoreFinal = recommendation?.scoreFinal ?? 0;
+  const hasScores = scoreFinal > 0;
 
   const handleLogDrink = () => setIsModalOpen(true);
 
@@ -139,7 +145,7 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
       </section>
 
       {/* Match Score Section */}
-      <section className="px-5 py-2">
+      {hasScores && <section className="px-5 py-2">
         <div className="bg-zinc-900 rounded-xl p-5 border border-white/5 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase flex items-center gap-1.5">
@@ -194,7 +200,7 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Flavor Profile Section */}
       <section className="px-5 py-4">
@@ -222,7 +228,7 @@ export const DrinkDetailScreen = ({ drink, scoreFlavor = 0, scorePrice = 0, scor
               I Tried This
               <ArrowRight size={16} strokeWidth={3} />
             </button> : <div className="space-y-2 text-center">
-              <button onClick={() => {}} className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2">
+              <button onClick={handleLogDrink} className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2">
                 Tried <Check size={16} className="text-green-500" strokeWidth={3} />
               </button>
               <button onClick={handleRemoveLog} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-bold">

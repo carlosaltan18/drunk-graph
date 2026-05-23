@@ -16,4 +16,5 @@ public interface IUserService {
     void registerConsume(String userId, ConsumptionRequest request);
     void deleteConsume(String userId, String drinkId);
     List<Drink> getConsumedDrinks(String userId, int page, int limit);
+    User updatePreferences(String userId, com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest request);
 }

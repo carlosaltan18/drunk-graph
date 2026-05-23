@@ -6,6 +6,7 @@ import { ArrowRight, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
 import { useTastes } from '@/lib/hooks/useTastes';
+import { usePreferences } from '@/lib/hooks/usePreferences';
 
 type ApiFlavor = components['schemas']['Flavor'];
 
@@ -73,6 +74,7 @@ const FlavorSlider = ({
 export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
   const router = useRouter();
   const { addTaste } = useTastes();
+  const { updatePreferences } = usePreferences();
   const flavors: Flavor[] = apiFlavors.map(f => ({
     id: f.name ?? '',
     name: (f.name ?? '').toUpperCase(),
@@ -93,7 +95,13 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     const activeTastes = Object.entries(flavorValues).filter(([, v]) => v > 0);
-    await Promise.all(activeTastes.map(([flavor, weight]) => addTaste(flavor, weight)));
+    await Promise.all([
+      ...activeTastes.map(([flavor, weight]) => addTaste(flavor, weight)),
+      updatePreferences({
+        budgetMax: parseFloat(maxSpend) || undefined,
+        prefersAlcohol: !isNonAlcoholic,
+      }),
+    ]);
     router.push('/dashboard');
   };
   return <div className="min-h-screen w-full max-w-[402px] mx-auto bg-zinc-950 text-white font-sans overflow-x-hidden selection:bg-orange-500 selection:text-black">
