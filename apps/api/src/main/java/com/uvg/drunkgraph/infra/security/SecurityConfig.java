@@ -1,13 +1,11 @@
 package com.uvg.drunkgraph.infra.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -19,9 +17,6 @@ public class SecurityConfig {
 
     private final ProvisioningJwtAuthenticationConverter jwtConverter;
 
-    @Value("${backoffice.jwks-uri}")
-    private String backofficeJwksUri;
-
     public SecurityConfig(ProvisioningJwtAuthenticationConverter jwtConverter) {
         this.jwtConverter = jwtConverter;
     }
@@ -29,20 +24,16 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
-        var decoder = NimbusJwtDecoder.withJwkSetUri(backofficeJwksUri).build();
-
         http
             .securityMatcher("/api/admin/**")
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            // Uses the same JWKS as the client chain — kid in the JWT header selects the right key
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt
-                    .decoder(decoder)
-                    .jwtAuthenticationConverter(token ->
-                        new JwtAuthenticationToken(token, List.of(), token.getSubject())
-                    )
-                )
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(token ->
+                    new JwtAuthenticationToken(token, List.of(), token.getSubject())
+                ))
             );
 
         return http.build();

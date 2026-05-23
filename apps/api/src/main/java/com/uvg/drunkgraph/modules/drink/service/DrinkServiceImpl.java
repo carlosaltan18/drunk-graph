@@ -1,5 +1,7 @@
 package com.uvg.drunkgraph.modules.drink.service;
 
+import com.uvg.drunkgraph.modules.drink.dto.DrinkBatchRequest;
+import com.uvg.drunkgraph.modules.drink.dto.DrinkEditRequest;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
@@ -31,4 +33,20 @@ public class DrinkServiceImpl implements IDrinkService {
         return drinkRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Drink not found: " + id));
     }
+
+    @Override
+    public List<Drink> importBatch(String placeId, DrinkBatchRequest request) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public Drink update(String id, DrinkEditRequest request) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public void delete(String id) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
 }

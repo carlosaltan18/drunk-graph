@@ -1,24 +1,31 @@
 package com.uvg.drunkgraph.infra.http.admin;
 
 import com.uvg.drunkgraph.modules.flavor.dto.FlavorRequest;
-import com.uvg.drunkgraph.modules.flavor.service.IAdminFlavorService;
 import com.uvg.drunkgraph.modules.flavor.model.Flavor;
+import com.uvg.drunkgraph.modules.flavor.service.IFlavorService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/flavors")
 public class AdminFlavorHandler {
 
-    private final IAdminFlavorService service;
+    private final IFlavorService service;
 
-    public AdminFlavorHandler(IAdminFlavorService service) {
+    public AdminFlavorHandler(IFlavorService service) {
         this.service = service;
+    }
+
+    @Operation(operationId = "adminListFlavors")
+    @GetMapping
+    public List<Flavor> listAll() {
+        return service.listAll();
     }
 
     @Operation(operationId = "createFlavor")

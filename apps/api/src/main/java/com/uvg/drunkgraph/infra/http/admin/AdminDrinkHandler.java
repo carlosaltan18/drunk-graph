@@ -2,8 +2,8 @@ package com.uvg.drunkgraph.infra.http.admin;
 
 import com.uvg.drunkgraph.modules.drink.dto.DrinkBatchRequest;
 import com.uvg.drunkgraph.modules.drink.dto.DrinkEditRequest;
-import com.uvg.drunkgraph.modules.drink.service.IAdminDrinkService;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.drink.service.IDrinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,10 +17,25 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminDrinkHandler {
 
-    private final IAdminDrinkService service;
+    private final IDrinkService service;
 
-    public AdminDrinkHandler(IAdminDrinkService service) {
+    public AdminDrinkHandler(IDrinkService service) {
         this.service = service;
+    }
+
+    @Operation(operationId = "adminListDrinks")
+    @GetMapping("/drinks")
+    public List<Drink> listAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int limit) {
+        return service.listAll(search, page, limit);
+    }
+
+    @Operation(operationId = "adminGetDrink")
+    @GetMapping("/drinks/{id}")
+    public Drink findById(@PathVariable String id) {
+        return service.findById(id);
     }
 
     @Operation(operationId = "importDrinks")
