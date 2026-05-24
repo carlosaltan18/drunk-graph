@@ -48,7 +48,7 @@ const ImageCarousel = ({
         <div className="flex h-full">
           {images.map((url, index) => <div key={index} className="flex-[0_0_100%] min-w-0 h-full relative">
               <DrinkImage src={url} alt={`Drink photo ${index + 1}`} className="absolute inset-0 w-full h-full" sizes="100vw" priority={index === 0} />
-              <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-zinc-950/60" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-zinc-950/60" />
             </div>)}
         </div>
       </div>

@@ -1,8 +1,9 @@
 'use client';
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Info, Beaker, Wine, Beer, Droplet, Coffee, UploadCloud } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, Info, Beaker, Wine, Beer, Droplet, Coffee, UploadCloud, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SessionBar } from './SessionBar';
 import { BrandButton } from './BrandButton';
 import { cn } from '@/lib/utils';
@@ -62,6 +63,7 @@ function apiToEditorDrink(d: ApiDrink, placeName: string): Drink {
 }
 
 export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: pagedDrinks, userEmail }) => {
+  const router = useRouter();
   const placeName = `${place.name ?? ''} — ${place.location ?? ''}`.trim().replace(/^—\s*/, '')
   const apiDrinks: ApiDrink[] = pagedDrinks.elements ?? [];
   const { updateDrink: saveDrink } = useAdminDrinks(place.id ?? null, pagedDrinks);
@@ -130,20 +132,33 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: pagedDr
     setIsSaving(false);
     setTimeout(() => setSavedId(null), 2000);
   };
+  if (!currentDrink) return (
+    <div className="flex flex-col h-screen bg-zinc-950 text-white font-sans">
+      <SessionBar type="admin" userName={userEmail.toUpperCase()} venueName={placeName.toUpperCase()} />
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">No drinks found for this venue.</p>
+        <button onClick={() => router.back()} className="text-amber-400 text-xs font-black uppercase tracking-widest underline underline-offset-4">← Back to venues</button>
+      </div>
+    </div>
+  );
+
   return <div className="flex flex-col h-screen bg-zinc-950 text-white font-sans overflow-hidden">
       <SessionBar type="admin" userName={userEmail.toUpperCase()} venueName={placeName.toUpperCase()} />
-      
+
       <main className="flex flex-1 overflow-hidden">
         {/* LEFT PANEL: Dual-Axis Carousel (65%) */}
         <section className="w-[65%] flex flex-col items-center justify-center p-8 bg-zinc-950 relative border-r border-zinc-900">
+          <button onClick={() => router.back()} className="absolute top-6 left-8 z-20 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform hover:border-amber-400/50 hover:text-amber-400">
+            <ArrowLeft size={18} />
+          </button>
           
           {/* Vertical Navigation Controls */}
           <div className="absolute top-12 z-10 flex flex-col items-center">
-            <button onClick={handlePrevDrink} disabled={currentDrinkIndex === 0} className="flex flex-col items-center group disabled:opacity-30 disabled:cursor-not-allowed">
+            <button onClick={handlePrevDrink} disabled={currentDrinkIndex === 0} suppressHydrationWarning className="flex flex-col items-center group disabled:opacity-30 disabled:cursor-not-allowed">
               <span className="text-[10px] font-black tracking-[0.2em] text-zinc-600 group-hover:text-amber-400 transition-colors uppercase mb-1">
                 PREV DRINK ↑
               </span>
-              <div className="w-24 h-12 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden opacity-40 group-hover:opacity-70 transition-opacity">
+              <div className="relative w-24 h-12 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden opacity-40 group-hover:opacity-70 transition-opacity">
                 {currentDrinkIndex > 0 && drinks[currentDrinkIndex - 1].images[0] && <Image src={drinks[currentDrinkIndex - 1].images[0]} alt="Previous drink" fill sizes="96px" className="object-cover" />}
               </div>
             </button>
@@ -192,17 +207,17 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({ place, drinks: pagedDr
             </AnimatePresence>
 
             {/* Horizontal Nav Arrows */}
-            <button onClick={handlePrevImage} disabled={currentImageIndex === 0} className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-zinc-900/80 hover:bg-amber-400 border border-white/10 rounded-full flex items-center justify-center transition-all group disabled:opacity-0">
+            <button onClick={handlePrevImage} disabled={currentImageIndex === 0} suppressHydrationWarning className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-zinc-900/80 hover:bg-amber-400 border border-white/10 rounded-full flex items-center justify-center transition-all group disabled:opacity-0">
               <ChevronLeft className="w-6 h-6 text-white group-hover:text-black" />
             </button>
-            <button onClick={handleNextImage} disabled={currentImageIndex === currentDrink.images.length - 1} className="absolute -right-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-zinc-900/80 hover:bg-amber-400 border border-white/10 rounded-full flex items-center justify-center transition-all group disabled:opacity-0">
+            <button onClick={handleNextImage} disabled={currentImageIndex === currentDrink.images.length - 1} suppressHydrationWarning className="absolute -right-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-zinc-900/80 hover:bg-amber-400 border border-white/10 rounded-full flex items-center justify-center transition-all group disabled:opacity-0">
               <ChevronRight className="w-6 h-6 text-white group-hover:text-black" />
             </button>
           </div>
 
           <div className="absolute bottom-12 z-10 flex flex-col items-center">
-             <button onClick={handleNextDrink} disabled={currentDrinkIndex === drinks.length - 1} className="flex flex-col items-center group disabled:opacity-30 disabled:cursor-not-allowed">
-              <div className="w-24 h-12 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden opacity-40 group-hover:opacity-70 transition-opacity mb-1">
+             <button onClick={handleNextDrink} disabled={currentDrinkIndex === drinks.length - 1} suppressHydrationWarning className="flex flex-col items-center group disabled:opacity-30 disabled:cursor-not-allowed">
+              <div className="relative w-24 h-12 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden opacity-40 group-hover:opacity-70 transition-opacity mb-1">
                 {currentDrinkIndex < drinks.length - 1 && drinks[currentDrinkIndex + 1].images[0] && <Image src={drinks[currentDrinkIndex + 1].images[0]} alt="Next drink" fill sizes="96px" className="object-cover" />}
               </div>
               <span className="text-[10px] font-black tracking-[0.2em] text-zinc-600 group-hover:text-amber-400 transition-colors uppercase">

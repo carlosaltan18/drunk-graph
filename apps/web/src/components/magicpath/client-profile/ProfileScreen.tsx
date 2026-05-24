@@ -90,7 +90,7 @@ export const ProfileScreen = ({ fallbackUser, fallbackTastes, fallbackStats }: P
               <div className="divide-y divide-zinc-800/30">
                 {sortedTastes.map(([name, score]) => <FlavorRow key={name} name={name} score={score} />)}
               </div>
-              <button onClick={() => router.push('/dashboard/onboarding')} className="flex items-center gap-1.5 pt-4 text-orange-500 text-[11px] font-bold uppercase tracking-wider group">
+              <button onClick={() => router.push('/dashboard/onboarding?back=/dashboard/profile')} className="flex items-center gap-1.5 pt-4 text-orange-500 text-[11px] font-bold uppercase tracking-wider group">
                 Edit preferences
                 <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
               </button>
@@ -98,7 +98,7 @@ export const ProfileScreen = ({ fallbackUser, fallbackTastes, fallbackStats }: P
           ) : (
             <div className="py-8 flex flex-col items-center text-center space-y-3">
               <p className="text-zinc-500 text-xs max-w-[200px] leading-relaxed">No preferences set. Your feed won't be personalized.</p>
-              <button onClick={() => router.push('/dashboard/onboarding')} className="text-orange-500 text-xs font-bold uppercase tracking-wider border-b border-orange-500/30 pb-0.5">
+              <button onClick={() => router.push('/dashboard/onboarding?back=/dashboard/profile')} className="text-orange-500 text-xs font-bold uppercase tracking-wider border-b border-orange-500/30 pb-0.5">
                 Set up tastes →
               </button>
             </div>

@@ -2,7 +2,7 @@ import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
 
-const SPRING_BASE_URL = process.env.SPRING_API_URL
+const SPRING_BASE_URL = process.env.SPRING_API_URL?.replace(/\/$/, "")
 
 async function handler(
   request: NextRequest,
@@ -24,28 +24,31 @@ async function handler(
   const search = request.nextUrl.searchParams.toString()
   const url = `${SPRING_BASE_URL}/${path.join("/")}${search ? `?${search}` : ""}`
 
-  const body = request.method !== "GET" ? await request.text() : undefined
+  const contentType = request.headers.get("content-type") ?? ""
+  const body = request.method !== "GET" ? await request.arrayBuffer() : undefined
+
+  const upstreamHeaders: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  }
+  if (contentType) upstreamHeaders["Content-Type"] = contentType
 
   const upstream = await fetch(url, {
     method: request.method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body,
+    headers: upstreamHeaders,
+    body: body ? Buffer.from(body) : undefined,
   })
 
-  const contentType = upstream.headers.get("content-type") ?? ""
+  const upstreamContentType = upstream.headers.get("content-type") ?? ""
   const text = await upstream.text()
 
-  if (contentType.includes("application/json")) {
+  if (upstreamContentType.includes("application/json")) {
     const data = text ? JSON.parse(text) : null
     return NextResponse.json(data, { status: upstream.status })
   }
 
   return new NextResponse(text, {
     status: upstream.status,
-    headers: { "content-type": contentType },
+    headers: { "content-type": upstreamContentType },
   })
 }
 

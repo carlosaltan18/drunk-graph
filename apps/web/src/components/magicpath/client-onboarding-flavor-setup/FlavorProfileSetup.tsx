@@ -1,8 +1,8 @@
 'use client';
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ChevronRight, Check } from 'lucide-react';
+import { ArrowRight, ChevronRight, Check, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { components } from '@generated/api/schema.d.ts';
 import { useTastes } from '@/lib/hooks/useTastes';
@@ -73,6 +73,8 @@ const FlavorSlider = ({
 };
 export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const backUrl = searchParams.get('back');
   const { addTaste } = useTastes();
   const { updatePreferences } = usePreferences();
   const flavors: Flavor[] = apiFlavors.map(f => ({
@@ -92,6 +94,10 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
     setFlavorValues(prev => ({ ...prev, [id]: val }));
   };
 
+  const markOnboarded = () => {
+    document.cookie = 'onboarded=true; path=/; max-age=31536000; SameSite=Lax';
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     const activeTastes = Object.entries(flavorValues).filter(([, v]) => v > 0);
@@ -102,7 +108,8 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
         prefersAlcohol: !isNonAlcoholic,
       }),
     ]);
-    router.push('/dashboard');
+    markOnboarded();
+    router.push(backUrl ?? '/dashboard');
   };
   return <div className="min-h-screen w-full max-w-[402px] mx-auto bg-zinc-950 text-white font-sans overflow-x-hidden selection:bg-orange-500 selection:text-black">
       {/* Container with spacing */}
@@ -110,6 +117,17 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
         
         {/* Header */}
         <header className="mb-10">
+          {backUrl && (
+            <motion.button
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => router.push(backUrl)}
+              className="flex items-center gap-1.5 mb-6 text-zinc-500 text-[11px] font-bold uppercase tracking-wider hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back
+            </motion.button>
+          )}
           <motion.span initial={{
           opacity: 0,
           y: 10
@@ -193,7 +211,7 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
               {!isSubmitting && <ArrowRight className="w-5 h-5 stroke-[3px]" />}
             </motion.button>
 
-            <button onClick={() => router.push('/dashboard')} className="text-zinc-600 text-xs font-bold underline underline-offset-4 tracking-wider uppercase hover:text-zinc-400 transition-colors">
+            <button onClick={() => { markOnboarded(); router.push(backUrl ?? '/dashboard'); }} className="text-zinc-600 text-xs font-bold underline underline-offset-4 tracking-wider uppercase hover:text-zinc-400 transition-colors">
               Skip for now →
             </button>
           </div>

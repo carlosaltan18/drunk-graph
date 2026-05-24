@@ -6,6 +6,7 @@ import { SessionBar } from './SessionBar';
 import { BrandButton } from './BrandButton';
 import { cn } from '@/lib/utils';
 import { useAdminDrinks, type StagedDrink } from '@/lib/hooks/useAdminDrinks';
+import Link from 'next/link';
 
 interface RawImage {
   id: string;
@@ -60,7 +61,6 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
     setDrinks(prev => [...prev, {
       id: `drink-${Date.now()}`,
       name: `DRINK #${prev.length + 1}`,
-      publicIds: [],
       previewUrls: selected.map(img => img.previewUrl),
       files: selected.map(img => img.file),
       status: 'pending',
@@ -91,9 +91,9 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
       <main className="max-w-6xl mx-auto px-6 py-12">
         <header className="mb-12">
           <nav className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Venues</span>
+            <Link href="/admin/dashboard" className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] hover:text-zinc-300 transition-colors">Venues</Link>
             <ChevronRight className="w-3 h-3 text-zinc-700" />
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{placeId}</span>
+            <Link href={`/admin/places/${placeId}`} className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] hover:text-zinc-300 transition-colors">{placeId}</Link>
             <ChevronRight className="w-3 h-3 text-zinc-700" />
             <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.2em]">Upload Drinks</span>
           </nav>

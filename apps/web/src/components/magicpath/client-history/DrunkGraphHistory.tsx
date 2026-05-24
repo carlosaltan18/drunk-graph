@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Star, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
 import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ const RatingStars = ({ rating }: { rating: number }) => (
 );
 
 export const DrunkGraphHistory = ({ fallbackConsumption, fallbackStats }: Props) => {
+  const router = useRouter();
   const { consumption, removeDrink } = useConsumption(fallbackConsumption.elements);
   const { stats } = useStats(fallbackStats);
   const [swipedId, setSwipedId] = React.useState<string | null>(null);
@@ -55,7 +57,7 @@ export const DrunkGraphHistory = ({ fallbackConsumption, fallbackStats }: Props)
           <p className="text-zinc-600 text-sm mb-8 leading-relaxed">
             Start browsing and tap "I tried this" on drinks you've had.
           </p>
-          <button className="group flex items-center gap-2 text-orange-500 font-black tracking-widest text-sm uppercase">
+          <button onClick={() => router.push('/dashboard/browse')} className="group flex items-center gap-2 text-orange-500 font-black tracking-widest text-sm uppercase">
             <span>BROWSE DRINKS</span>
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>

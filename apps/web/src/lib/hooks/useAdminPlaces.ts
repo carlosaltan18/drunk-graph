@@ -17,7 +17,7 @@ const fetcher = (): Promise<PagedResultPlace> =>
   });
 
 export function useAdminPlaces(fallbackData?: PagedResultPlace) {
-  const { data, isLoading, error, mutate } = useSWR<PagedResultPlace>(KEY, fetcher, { fallbackData });
+  const { data, isLoading, mutate } = useSWR<PagedResultPlace>(KEY, fetcher, { fallbackData });
 
   const createPlace = async (request: PlaceRequest) => {
     try {
@@ -33,11 +33,10 @@ export function useAdminPlaces(fallbackData?: PagedResultPlace) {
     }
   };
 
-  return { 
-    places: data?.elements ?? [], 
+  return {
+    places: data?.elements ?? [],
     total: data?.total ?? 0,
-    isLoading, 
-    error,
+    isLoading,
     createPlace
   };
 }
