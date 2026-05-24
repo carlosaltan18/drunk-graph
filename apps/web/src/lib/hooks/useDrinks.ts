@@ -1,10 +1,10 @@
-'use client';
-import useSWRInfinite from 'swr/infinite';
-import { clientApi } from '@/lib/api/client';
-import type { components } from '@generated/api/schema.d.ts';
+"use client";
+import type { components } from "@generated/api/schema.d.ts";
+import useSWRInfinite from "swr/infinite";
+import { clientApi } from "@/lib/api/client";
 
-type ApiDrink = components['schemas']['Drink'];
-type PagedDrinks = components['schemas']['PagedResultDrink'];
+type ApiDrink = components["schemas"]["Drink"];
+type PagedDrinks = components["schemas"]["PagedResultDrink"];
 
 const PAGE_SIZE = 20;
 
@@ -14,41 +14,62 @@ function loadedCount(p: PagedDrinks) {
   return (p.page ?? 0) * (p.limit ?? PAGE_SIZE) + (p.elements?.length ?? 0);
 }
 
-function fetchPage([, search, page, category]: DrinkKey): Promise<PagedDrinks> {
-  if (category !== 'all') {
-    return clientApi
-      .GET('/api/drinks/category/{category}', {
-        params: { path: { category }, query: { search, page, limit: PAGE_SIZE } },
-      })
-      .then(r => {
-        if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
-        return r.data!;
-      });
-  }
-  return clientApi
-    .GET('/api/drinks', { params: { query: { search, page, limit: PAGE_SIZE } } })
-    .then(r => {
-      if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
-      return r.data!;
+async function fetchPage([
+  ,
+  search,
+  page,
+  category,
+]: DrinkKey): Promise<PagedDrinks> {
+  if (category !== "all") {
+    const r = await clientApi.GET("/api/drinks/category/{category}", {
+      params: {
+        path: { category },
+        query: { search, page, limit: PAGE_SIZE },
+      },
     });
+    if (!r.response.ok)
+      throw new Error(`${r.response.status}: ${r.response.statusText}`);
+    if (!r.data) throw new Error("Empty response from /api/drinks/category");
+    return r.data;
+  }
+  const r_1 = await clientApi.GET("/api/drinks", {
+    params: { query: { search, page, limit: PAGE_SIZE } },
+  });
+  if (!r_1.response.ok)
+    throw new Error(`${r_1.response.status}: ${r_1.response.statusText}`);
+  if (!r_1.data) throw new Error("Empty response from /api/drinks");
+  return r_1.data;
 }
 
-export function useDrinks(search: string, category: string, initialPage?: PagedDrinks) {
+export function useDrinks(
+  search: string,
+  category: string,
+  initialPage?: PagedDrinks,
+) {
   const getKey = (page: number, prev: PagedDrinks | null): DrinkKey | null => {
     if (prev && loadedCount(prev) >= (prev.total ?? 0)) return null;
-    return ['/api/drinks', search, page, category];
+    return ["/api/drinks", search, page, category];
   };
 
   const fallbackData = initialPage ? [initialPage] : undefined;
 
-  const { data, setSize, isLoading, isValidating } = useSWRInfinite<PagedDrinks>(getKey, fetchPage, {
-    revalidateFirstPage: false,
-    fallbackData,
-  });
+  const { data, setSize, isLoading, isValidating } =
+    useSWRInfinite<PagedDrinks>(getKey, fetchPage, {
+      revalidateFirstPage: false,
+      fallbackData,
+    });
 
-  const drinks: ApiDrink[] = (data ?? []).flatMap(p => p.elements ?? []);
+  const drinks: ApiDrink[] = (data ?? []).flatMap((p) => p.elements ?? []);
   const lastPage = data?.[data.length - 1];
-  const hasMore = lastPage ? loadedCount(lastPage) < (lastPage.total ?? 0) : false;
+  const hasMore = lastPage
+    ? loadedCount(lastPage) < (lastPage.total ?? 0)
+    : false;
 
-  return { drinks, hasMore, isLoading, isValidating, loadMore: () => setSize(s => s + 1) };
+  return {
+    drinks,
+    hasMore,
+    isLoading,
+    isValidating,
+    loadMore: () => setSize((s) => s + 1),
+  };
 }

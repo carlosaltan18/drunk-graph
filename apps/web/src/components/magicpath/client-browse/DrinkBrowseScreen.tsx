@@ -1,16 +1,16 @@
-'use client';
-import * as React from 'react';
-import Link from 'next/link';
-import { Search, ChevronRight, Loader2 } from 'lucide-react';
-import { ClientBottomNav } from '@/components/magicpath/shared/ClientBottomNav';
-import { DrinkImage } from '@/components/magicpath/shared/DrinkImage';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useDrinks } from '@/lib/hooks/useDrinks';
-import type { components } from '@generated/api/schema.d.ts';
+"use client";
+import type { components } from "@generated/api/schema.d.ts";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronRight, Loader2, Search } from "lucide-react";
+import Link from "next/link";
+import * as React from "react";
+import { ClientBottomNav } from "@/components/magicpath/shared/ClientBottomNav";
+import { DrinkImage } from "@/components/magicpath/shared/DrinkImage";
+import { useDrinks } from "@/lib/hooks/useDrinks";
+import { cn } from "@/lib/utils";
 
-type ApiDrink = components['schemas']['Drink'];
-type PagedDrinks = components['schemas']['PagedResultDrink'];
+type ApiDrink = components["schemas"]["Drink"];
+type PagedDrinks = components["schemas"]["PagedResultDrink"];
 
 interface Drink {
   id: string;
@@ -27,22 +27,22 @@ interface Category {
 }
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
-  cocktail: 'from-orange-500 to-red-600',
-  beer: 'from-amber-500 to-yellow-600',
-  spirit: 'from-violet-600 to-indigo-700',
-  wine: 'from-rose-600 to-pink-800',
-  shot: 'from-red-600 to-rose-900',
-  mocktail: 'from-emerald-400 to-teal-600',
+  cocktail: "from-orange-500 to-red-600",
+  beer: "from-amber-500 to-yellow-600",
+  spirit: "from-violet-600 to-indigo-700",
+  wine: "from-rose-600 to-pink-800",
+  shot: "from-red-600 to-rose-900",
+  mocktail: "from-emerald-400 to-teal-600",
 };
 
 const CATEGORIES: Category[] = [
-  { id: 'all', label: 'All' },
-  { id: 'cocktail', label: 'Cocktail' },
-  { id: 'beer', label: 'Beer' },
-  { id: 'spirit', label: 'Spirit' },
-  { id: 'wine', label: 'Wine' },
-  { id: 'shot', label: 'Shot' },
-  { id: 'mocktail', label: 'Mocktail' },
+  { id: "all", label: "All" },
+  { id: "cocktail", label: "Cocktail" },
+  { id: "beer", label: "Beer" },
+  { id: "spirit", label: "Spirit" },
+  { id: "wine", label: "Wine" },
+  { id: "shot", label: "Shot" },
+  { id: "mocktail", label: "Mocktail" },
 ];
 
 const DrinkCard = ({ drink }: { drink: Drink }) => (
@@ -61,12 +61,16 @@ const DrinkCard = ({ drink }: { drink: Drink }) => (
         sizes="(max-width: 640px) 50vw, 25vw"
       />
       <div className="p-3 flex flex-col gap-1">
-        <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">{drink.name}</h3>
+        <h3 className="text-white font-bold text-sm leading-tight line-clamp-2">
+          {drink.name}
+        </h3>
         <div className="flex items-center justify-between mt-1">
           <span className="text-[10px] uppercase tracking-wider text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-md">
             {drink.category}
           </span>
-          <span className="text-zinc-400 text-[11px] font-medium">{drink.price}</span>
+          <span className="text-zinc-400 text-[11px] font-medium">
+            {drink.price}
+          </span>
         </div>
       </div>
     </motion.div>
@@ -75,12 +79,13 @@ const DrinkCard = ({ drink }: { drink: Drink }) => (
 
 function toDrink(d: ApiDrink): Drink {
   return {
-    id: d.id ?? '',
-    name: d.name ?? 'Unknown',
-    category: d.category ?? 'cocktail',
-    price: `Q ${d.price?.toFixed(0) ?? '—'}`,
+    id: d.id ?? "",
+    name: d.name ?? "Unknown",
+    category: d.category ?? "cocktail",
+    price: `Q ${d.price?.toFixed(0) ?? "—"}`,
     imageUrl: d.imageUrls?.[0] ?? null,
-    gradient: CATEGORY_GRADIENTS[d.category ?? ''] ?? 'from-zinc-700 to-zinc-900',
+    gradient:
+      CATEGORY_GRADIENTS[d.category ?? ""] ?? "from-zinc-700 to-zinc-900",
   };
 }
 
@@ -89,9 +94,9 @@ interface Props {
 }
 
 export const DrinkBrowseScreen = ({ initialPage }: Props) => {
-  const [activeCategory, setActiveCategory] = React.useState('all');
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [activeCategory, setActiveCategory] = React.useState("all");
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const loaderRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -99,14 +104,22 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const { drinks: apiDrinks, hasMore, isLoading, isValidating, loadMore } = useDrinks(debouncedSearch, activeCategory, initialPage);
+  const {
+    drinks: apiDrinks,
+    hasMore,
+    isLoading,
+    isValidating,
+    loadMore,
+  } = useDrinks(debouncedSearch, activeCategory, initialPage);
   const drinks = apiDrinks.map(toDrink);
 
   React.useEffect(() => {
     if (!loaderRef.current) return;
     const observer = new IntersectionObserver(
-      entries => { if (entries[0].isIntersecting && hasMore && !isValidating) loadMore(); },
-      { threshold: 0.1 }
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isValidating) loadMore();
+      },
+      { threshold: 0.1 },
     );
     observer.observe(loaderRef.current);
     return () => observer.disconnect();
@@ -115,10 +128,19 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-orange-500/30 pb-32">
       <header className="px-6 pt-12 pb-6">
-        <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="text-6xl font-black tracking-tighter text-white">
+        <motion.h1
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-6xl font-black tracking-tighter text-white"
+        >
           BROWSE
         </motion.h1>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="text-zinc-500 text-sm mt-1 font-medium">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-zinc-500 text-sm mt-1 font-medium"
+        >
           Every drink in the graph.
         </motion.p>
       </header>
@@ -126,12 +148,15 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
       <section className="px-6 mb-6">
         <div className="relative group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-            <Search size={18} className="text-zinc-500 group-focus-within:text-orange-500 transition-colors" />
+            <Search
+              size={18}
+              className="text-zinc-500 group-focus-within:text-orange-500 transition-colors"
+            />
           </div>
           <input
             type="text"
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search drinks, flavors..."
             className="w-full bg-zinc-900 border border-zinc-800 rounded-[12px] py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all placeholder:text-zinc-600 text-white"
           />
@@ -140,15 +165,15 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
 
       <section className="mb-8">
         <div className="flex overflow-x-auto no-scrollbar gap-2 px-6">
-          {CATEGORIES.map(category => (
+          {CATEGORIES.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                'whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200',
+                "whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200",
                 activeCategory === category.id
-                  ? 'bg-orange-500 text-black scale-105 shadow-[0_0_20px_rgba(249,115,22,0.3)]'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  ? "bg-orange-500 text-black scale-105 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700",
               )}
             >
               {category.label}
@@ -160,13 +185,17 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
       <section className="px-6">
         <div className="grid grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {drinks.map(drink => <DrinkCard key={drink.id} drink={drink} />)}
+            {drinks.map((drink) => (
+              <DrinkCard key={drink.id} drink={drink} />
+            ))}
           </AnimatePresence>
         </div>
 
         {!isLoading && drinks.length === 0 && (
           <div className="py-20 text-center">
-            <p className="text-zinc-500 font-medium italic">No drinks found{searchQuery ? ` for "${searchQuery}"` : ''}.</p>
+            <p className="text-zinc-500 font-medium italic">
+              No drinks found{searchQuery ? ` for "${searchQuery}"` : ""}.
+            </p>
           </div>
         )}
 

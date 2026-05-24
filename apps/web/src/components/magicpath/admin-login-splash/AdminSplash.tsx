@@ -1,9 +1,10 @@
-'use client';
-import React, { useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Lock, LogIn, ShieldCheck, AlertCircle } from 'lucide-react';
-import { adminAuthClient } from '@/lib/auth-client';
+"use client";
+import { motion } from "framer-motion";
+import { AlertCircle, Lock, LogIn, ShieldCheck } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import type React from "react";
+import { useEffect } from "react";
+import { adminAuthClient } from "@/lib/auth-client";
 
 const BackgroundDecoration = () => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
@@ -25,22 +26,30 @@ const BrandingLockup = () => (
       DRUNKGRAPH
     </h1>
     <div className="w-full h-[2px] bg-amber-400" />
-    <span className="mt-3 text-lg text-zinc-500 italic font-medium">Admin Console</span>
+    <span className="mt-3 text-lg text-zinc-500 italic font-medium">
+      Admin Console
+    </span>
   </div>
 );
 
 export const AdminSplash: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const isSignedOut = searchParams.get('signout') === 'true';
+  const isSignedOut = searchParams.get("signout") === "true";
 
   useEffect(() => {
     if (isSignedOut) return;
-    adminAuthClient.signIn.oauth2({ providerId: 'fusionauth-admin', callbackURL: '/admin/dashboard' });
+    adminAuthClient.signIn.oauth2({
+      providerId: "fusionauth-admin",
+      callbackURL: "/admin/dashboard",
+    });
   }, [isSignedOut]);
 
   const handleSignIn = () => {
-    adminAuthClient.signIn.oauth2({ providerId: 'fusionauth-admin', callbackURL: '/admin/dashboard' });
+    adminAuthClient.signIn.oauth2({
+      providerId: "fusionauth-admin",
+      callbackURL: "/admin/dashboard",
+    });
   };
 
   return (
@@ -51,10 +60,16 @@ export const AdminSplash: React.FC = () => {
 
         <div className="relative z-10 flex flex-col items-center mt-4 w-full max-w-[320px]">
           {isSignedOut ? (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center w-full">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center w-full"
+            >
               <div className="flex items-center gap-2 mb-8 text-zinc-400">
                 <AlertCircle size={16} className="text-amber-400/80" />
-                <span className="text-lg font-light tracking-wide">You have been signed out.</span>
+                <span className="text-lg font-light tracking-wide">
+                  You have been signed out.
+                </span>
               </div>
               <button
                 onClick={handleSignIn}
@@ -73,16 +88,25 @@ export const AdminSplash: React.FC = () => {
               <div className="w-full h-[2px] bg-zinc-900 rounded-full overflow-hidden relative mb-4">
                 <motion.div
                   className="absolute top-0 left-0 h-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]"
-                  initial={{ width: '0%' }}
-                  animate={{ width: ['0%', '30%', '60%', '100%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  initial={{ width: "0%" }}
+                  animate={{ width: ["0%", "30%", "60%", "100%"] }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                 />
               </div>
               <div className="flex items-center gap-2 text-zinc-600">
-                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
                   <ShieldCheck size={12} className="text-amber-400/60" />
                 </motion.div>
-                <span className="text-[0.65rem] uppercase tracking-widest font-medium">Verifying credentials...</span>
+                <span className="text-[0.65rem] uppercase tracking-widest font-medium">
+                  Verifying credentials...
+                </span>
               </div>
             </div>
           )}

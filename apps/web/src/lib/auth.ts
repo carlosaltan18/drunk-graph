@@ -1,9 +1,10 @@
-import { betterAuth } from "better-auth"
-import { genericOAuth } from "better-auth/plugins"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+import { env } from "@/lib/env.server";
 
 const sharedConfig = {
-  secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL!,
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
   account: {
     storeAccountCookie: true,
   },
@@ -24,15 +25,19 @@ const sharedConfig = {
       refreshCache: true,
     },
   },
-}
+};
 
 function mapProfileToUser(role: "user" | "admin") {
-  return (profile: Record<string, unknown>) => ({
-    name: (profile.name as string) ?? (profile.email as string)?.split("@")[0] ?? profile.sub,
-    email: profile.email,
-    image: profile.picture,
-    role,
-  })
+  return (profile: Record<string, unknown>) => {
+    const email = typeof profile.email === "string" ? profile.email : undefined;
+    const image =
+      typeof profile.picture === "string" ? profile.picture : undefined;
+    const name =
+      typeof profile.name === "string"
+        ? profile.name
+        : email?.split("@")[0] ?? String(profile.sub ?? "");
+    return { name, email, image, role };
+  };
 }
 
 export const auth = betterAuth({
@@ -44,16 +49,16 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "fusionauth",
-          clientId: process.env.FUSIONAUTH_CLIENT_ID!,
-          clientSecret: process.env.FUSIONAUTH_CLIENT_SECRET!,
-          discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
+          clientId: env.FUSIONAUTH_CLIENT_ID,
+          clientSecret: env.FUSIONAUTH_CLIENT_SECRET,
+          discoveryUrl: `${env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
           scopes: ["openid", "email", "profile"],
           mapProfileToUser: mapProfileToUser("user"),
         },
       ],
     }),
   ],
-})
+});
 
 export const adminAuth = betterAuth({
   ...sharedConfig,
@@ -64,13 +69,13 @@ export const adminAuth = betterAuth({
       config: [
         {
           providerId: "fusionauth-admin",
-          clientId: process.env.BACKOFFICE_CLIENT_ID!,
-          clientSecret: process.env.BACKOFFICE_CLIENT_SECRET!,
-          discoveryUrl: `${process.env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
+          clientId: env.BACKOFFICE_CLIENT_ID,
+          clientSecret: env.BACKOFFICE_CLIENT_SECRET,
+          discoveryUrl: `${env.FUSIONAUTH_URL}/.well-known/openid-configuration`,
           scopes: ["openid", "email", "profile"],
           mapProfileToUser: mapProfileToUser("admin"),
         },
       ],
     }),
   ],
-})
+});
