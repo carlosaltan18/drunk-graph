@@ -11,15 +11,16 @@ A graph-powered drink recommendation platform. Users define their flavor prefere
                          │
 ┌────────────────────────▼────────────────────────────────┐
 │                   Next.js (apps/web)                    │
-│  - BetterAuth session management                        │
-│  - /api/proxy/[...path] → forwards requests to API      │
+│  - BetterAuth session management (user + admin)         │
+│  - /api/proxy/[...path] → forwards to Spring API        │
 │    with FusionAuth JWT as Bearer token                  │
 └────────────────────────┬────────────────────────────────┘
                          │ Bearer JWT
 ┌────────────────────────▼────────────────────────────────┐
-│               Spring Boot API (apps/api)                │
-│  - Validates JWT via FusionAuth JWKS                    │
-│  - Vertical slice architecture                          │
+│         Spring Boot API (apps/api)  OR  Mock API        │
+│         (apps/mock-api)                                 │
+│  - Spring: validates JWT, vertical slice, Neo4j         │
+│  - Mock: Express + Faker, same OpenAPI contract         │
 └──────┬─────────────────┬──────────────────┬─────────────┘
        │                 │                  │
 ┌──────▼──────┐  ┌───────▼──────┐  ┌───────▼──────┐
@@ -27,6 +28,57 @@ A graph-powered drink recommendation platform. Users define their flavor prefere
 │ (graph DB)  │  │   (auth)     │  │  (storage)   │
 └─────────────┘  └──────────────┘  └──────────────┘
 ```
+
+## Apps
+
+### `apps/web` — Next.js Frontend
+
+The user-facing app and admin backoffice, served from a single Next.js instance.
+
+- **User app** (`/dashboard`) — recommendation feed, drink browser, drink detail, consumption history, flavor profile setup, user profile
+- **Admin backoffice** (`/admin`) — venue management, batch drink uploader, drink editor
+- **Auth** — two independent BetterAuth instances with isolated cookie namespaces (`ba-user.*` / `ba-admin.*`). Both can be active simultaneously in the same browser
+- **API access** — browser calls go through `/api/proxy` (user) or `/api/admin-proxy` (admin), which attach the FusionAuth JWT. Server components call Spring directly via `createServerApi()` / `createAdminApi()`
+- **TypeScript API client** — fully typed via `openapi-fetch`, generated from `apps/api/openapi/client.json` and `admin.json`. Run `just generate-api` to regenerate after spec changes
+
+See [`apps/web/README.md`](apps/web/README.md) for full detail.
+
+---
+
+### `apps/api` — Spring Boot API
+
+The backend. Validates FusionAuth JWTs (RS256 via JWKS), queries Neo4j, and stores drink images in MinIO.
+
+- **Two security filter chains** — one per tenant (user vs admin), each with its own JWKS URI. A user JWT cannot reach admin endpoints and vice versa
+- **Vertical slice architecture** — each feature lives in `modules/<feature>/use_cases/{commands,queries}/<use_case>/`. Controllers are thin HTTP adapters
+- **Neo4j** — mutations via Spring Data Neo4j repositories; reads via `Neo4jClient` with raw Cypher returning shaped read models (never reusing the `@Node` entity)
+- **Recommendation algorithm** — Jaccard similarity + weighted flavor bonus, computed at query time directly on the graph. No pre-computation
+- **Image storage** — Cloudinary for uploads (signed directly from the browser); image URLs stored in Neo4j as public URLs
+- **User provisioning** — users are lazily created in Neo4j on first authenticated request via a custom `JwtAuthenticationConverter`. An in-memory `ConcurrentHashMap` cache prevents repeat round-trips
+
+---
+
+### `apps/mock-api` — Mock API
+
+A lightweight Express server that implements the same OpenAPI contract as the Spring API using `@faker-js/faker`. Runs on port 8080 — same as Spring — so the web app switches between them just by changing which process is running.
+
+**When to use it:**
+- Frontend development without needing Java / Neo4j / FusionAuth running
+- Testing UI with predictable seeded data (`faker.seed(1)` — responses are stable across restarts)
+- Working on endpoints the Spring API hasn't implemented yet
+
+**How it works:**
+- Reads `apps/api/openapi/client.json` and `admin.json` at startup
+- Maps each `operationId` to a handler function that returns Faker-generated data
+- Any `operationId` without a handler returns `501` with a warning in the console
+- Pagination (`page` / `limit` query params) is respected
+
+```bash
+just mock-api   # start mock API on :8080
+just web        # start Next.js on :3000 (points to :8080 by default)
+```
+
+No auth is enforced by the mock — all endpoints return 200 regardless of the `Authorization` header.
 
 ## Graph Model
 
@@ -117,13 +169,16 @@ User → FusionAuth (Google / GitHub OAuth) → BetterAuth session (Next.js)
 
 ```
 apps/
-  web/                    # Next.js frontend
-  api/
+  web/                    # Next.js frontend (user app + admin backoffice)
+  api/                    # Spring Boot API
+    openapi/              # OpenAPI specs (client.json, admin.json) — source of truth for types
     import/               # Cypher seed files (run with `just seed <file>`)
+  mock-api/               # Express mock server (same OpenAPI contract, Faker data)
 fusionauth/
   kickstart.json          # bootstraps FusionAuth on first run
   templates/
-    oauth2Authorize.ftl   # custom login page
+    oauth2Authorize.ftl         # custom user login page
+    oauth2AuthorizeBackoffice.ftl  # custom admin login page
 docs/                     # architecture documentation
 compose.yaml              # Neo4j + FusionAuth + Postgres + MinIO
 .env.example              # all required environment variables
@@ -194,15 +249,17 @@ The app is now running at **http://localhost:3000**.
 | Command | Description |
 |---|---|
 | `just setup` | Copy `.env.example` and `.env.local.example` to their real files (skips if already exists) |
-| `just api` | Spring Boot API only |
-| `just web` | Next.js frontend only |
+| `just dev` | Start Spring API + Next.js + OpenAPI watcher together |
+| `just api` | Spring Boot API only (port 8080) |
+| `just mock-api` | Mock API only (port 8080) — use instead of `just api` for frontend-only work |
+| `just web` | Next.js frontend only (port 3000) |
 | `just watch` | OpenAPI spec watcher (auto-generates TypeScript client on spec change) |
 | `just compile` | Recompile the API to trigger devtools hot reload |
 | `just infra-up` | Start Docker services (Neo4j, FusionAuth, MinIO) |
 | `just infra-down` | Stop Docker services |
 | `just infra-reset` | Wipe and restart all Docker services |
 | `just fusionauth-reset` | Re-run FusionAuth kickstart (e.g. after changing `kickstart.json`) |
-| `just seed <file>` | Copy a Cypher file from `apps/api/import/` into Neo4j and run it (e.g. `just seed liquidgrapg.cypher`) |
+| `just seed <file>` | Copy a Cypher file from `apps/api/import/` into Neo4j and run it |
 | `just generate-api` | Manually regenerate the TypeScript API client from the OpenAPI spec |
 
 ### Services
