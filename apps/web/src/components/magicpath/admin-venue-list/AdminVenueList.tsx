@@ -6,18 +6,19 @@ import { MapPin, Plus, ArrowRight } from 'lucide-react';
 import { SessionBar } from './SessionBar';
 import { ActionCard } from './ActionCard';
 import { BrandButton } from './BrandButton';
+import { useAdminPlaces } from '@/lib/hooks/useAdminPlaces';
 import type { components } from '@generated/admin-api/schema.d.ts';
 
-type Place = components['schemas']['Place'];
 type PagedResultPlace = components['schemas']['PagedResultPlace'];
 
 interface Props {
-  places: PagedResultPlace;
+  fallbackData?: PagedResultPlace;
   userEmail: string;
 }
 
-export const AdminVenueList: React.FC<Props> = ({ places, userEmail }) => {
-  const placeList: Place[] = places.elements ?? [];
+export const AdminVenueList: React.FC<Props> = ({ fallbackData, userEmail }) => {
+  const { places: placeList } = useAdminPlaces(fallbackData);
+  
   return <div className="min-h-screen bg-zinc-950 text-white font-sans selection:bg-amber-400 selection:text-black">
       <SessionBar type="admin" userName={userEmail.toUpperCase()} venueName="ROOT ACCESS" />
 

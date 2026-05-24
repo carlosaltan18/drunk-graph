@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
-
+import jakarta.servlet.DispatcherType;
 import java.io.IOException;
 
 @Configuration
@@ -26,11 +26,20 @@ public class HttpLoggingConfig {
             @Override
             protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                     throws ServletException, IOException {
+                // Skip the internal /error re-dispatch — we already logged the original request
+                if (req.getDispatcherType() == DispatcherType.ERROR) {
+                    chain.doFilter(req, res);
+                    return;
+                }
                 long start = System.currentTimeMillis();
+                Integer errorStatus = null;
                 try {
                     chain.doFilter(req, res);
+                } catch (Exception ex) {
+                    errorStatus = 500;
+                    throw ex;
                 } finally {
-                    int status = res.getStatus();
+                    int status = errorStatus != null ? errorStatus : res.getStatus();
                     log.info("{} {} {} {}ms",
                         req.getMethod(),
                         req.getRequestURI(),

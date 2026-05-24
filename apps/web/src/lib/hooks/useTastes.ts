@@ -6,7 +6,7 @@ import { clientApi } from '@/lib/api/client';
 const KEY = '/api/users/me/tastes';
 
 const fetcher = () => clientApi.GET('/api/users/me/tastes').then(r => {
-  if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+  if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
   return r.data ?? {};
 });
 
@@ -17,7 +17,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
     mutate({ ...(data ?? {}), [flavor]: weight }, { revalidate: false });
     try {
       const res = await clientApi.POST('/api/users/me/tastes', { body: { flavor, weight } });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status}: ${res.response.statusText}`);
       mutate();
     } catch (err) {
       mutate();
@@ -31,7 +31,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
     mutate(next, { revalidate: false });
     try {
       const res = await clientApi.DELETE('/api/users/me/tastes/{flavor}', { params: { path: { flavor } } });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status}: ${res.response.statusText}`);
       mutate();
     } catch (err) {
       mutate();

@@ -7,7 +7,7 @@ export default async function AdminDashboard() {
   const session = await adminAuth.api.getSession({ headers: await headers() })
 
   const api = await createAdminApi()
-  const { data: places } = await api.GET("/api/admin/places")
+  const { data } = await api.GET("/api/admin/places")
 
-  return <AdminVenueList places={places ?? {}} userEmail={session!.user.email} />
+  return <AdminVenueList fallbackData={data} userEmail={session!.user.email} />
 }

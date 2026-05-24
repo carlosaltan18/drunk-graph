@@ -47,7 +47,7 @@ function fetchAdminDrinks([, placeId]: AdminDrinksKey): Promise<PagedDrinks> {
   return adminClientApi
     .GET('/api/admin/drinks', { params: { query: { placeId: placeId ?? undefined } } })
     .then(r => {
-      if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+      if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
       return r.data!;
     });
 }
@@ -67,7 +67,7 @@ export function useAdminDrinks(placeId: string | null, fallbackData?: PagedDrink
     mutate(optimistic, { revalidate: false });
     try {
       const res = await adminClientApi.PUT('/api/admin/drinks/{id}', { params: { path: { id } }, body: request });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status}: ${res.response.statusText}`);
       mutate();
     } catch (err) {
       mutate();
@@ -81,7 +81,7 @@ export function useAdminDrinks(placeId: string | null, fallbackData?: PagedDrink
   ): Promise<boolean> => {
     try {
       const sigRes = await adminClientApi.POST('/api/admin/uploads/sign', {});
-      if (sigRes.error) throw new Error(`${sigRes.response.status} ${sigRes.response.statusText}`);
+      if (!sigRes.response.ok) throw new Error(`${sigRes.response.status}: ${sigRes.response.statusText}`);
       const sig = sigRes.data!;
 
       const drinkRequests: DrinkItemRequest[] = await Promise.all(
@@ -102,7 +102,7 @@ export function useAdminDrinks(placeId: string | null, fallbackData?: PagedDrink
         params: { path: { placeId: placeId! } },
         body: { drinks: drinkRequests },
       });
-      if (batchRes.error) throw new Error(`${batchRes.response.status} ${batchRes.response.statusText}`);
+      if (!batchRes.response.ok) throw new Error(`${batchRes.response.status}: ${batchRes.response.statusText}`);
 
       mutate();
       toast.success(`${stagedDrinks.length} ${stagedDrinks.length === 1 ? 'drink' : 'drinks'} imported successfully`);

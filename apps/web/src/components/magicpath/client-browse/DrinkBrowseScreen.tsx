@@ -10,6 +10,7 @@ import { useDrinks } from '@/lib/hooks/useDrinks';
 import type { components } from '@generated/api/schema.d.ts';
 
 type ApiDrink = components['schemas']['Drink'];
+type PagedDrinks = components['schemas']['PagedResultDrink'];
 
 interface Drink {
   id: string;
@@ -83,7 +84,11 @@ function toDrink(d: ApiDrink): Drink {
   };
 }
 
-export const DrinkBrowseScreen = () => {
+interface Props {
+  initialPage?: PagedDrinks;
+}
+
+export const DrinkBrowseScreen = ({ initialPage }: Props) => {
   const [activeCategory, setActiveCategory] = React.useState('all');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
@@ -94,7 +99,7 @@ export const DrinkBrowseScreen = () => {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  const { drinks: apiDrinks, hasMore, isLoading, isValidating, loadMore } = useDrinks(debouncedSearch, activeCategory);
+  const { drinks: apiDrinks, hasMore, isLoading, isValidating, loadMore } = useDrinks(debouncedSearch, activeCategory, initialPage);
   const drinks = apiDrinks.map(toDrink);
 
   React.useEffect(() => {

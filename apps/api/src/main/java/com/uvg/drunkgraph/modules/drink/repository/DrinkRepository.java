@@ -64,7 +64,7 @@ public class DrinkRepository {
                 MATCH (d:Drink {id: $id})
                 OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
                 OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
-                RETURN """ + DRINK_FIELDS)
+                """ + "RETURN " + DRINK_FIELDS)
                 .bind(id).to("id")
                 .fetchAs(Drink.class)
                 .mappedBy((ts, row) -> mapRow(row))
@@ -90,7 +90,7 @@ public class DrinkRepository {
                   AND ($placeId IS NULL OR EXISTS { MATCH (d)-[:SERVED_AT]->(:Place {id: $placeId}) })
                 OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
                 OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
-                RETURN """ + DRINK_FIELDS + """
+                """ + "RETURN " + DRINK_FIELDS + """
                 ORDER BY d.name
                 SKIP $skip LIMIT $limit
                 """)
@@ -122,7 +122,7 @@ public class DrinkRepository {
                 WHERE $search IS NULL OR toLower(d.name) CONTAINS toLower($search)
                 OPTIONAL MATCH (d)-[:SERVED_AT]->(p:Place)
                 OPTIONAL MATCH (d)-[r:HAS_FLAVOR]->(f:Flavor)
-                RETURN """ + DRINK_FIELDS + """
+                """ + "RETURN " + DRINK_FIELDS + """
                 ORDER BY d.name
                 SKIP $skip LIMIT $limit
                 """)

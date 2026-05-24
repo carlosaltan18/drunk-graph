@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight, MapPin, ArrowRight, LogOut, Circle, AlertCircle, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { adminAuthClient } from '@/lib/auth-client';
-import { adminClientApi } from '@/lib/api/admin-client';
+import { useAdminPlaces } from '@/lib/hooks/useAdminPlaces';
 
 interface Props {
   userEmail: string;
@@ -59,9 +59,9 @@ const VenuePreview = ({ name, location }: { name: string; location: string }) =>
 
 export const CreateVenuePage = ({ userEmail }: Props) => {
   const router = useRouter();
+  const { createPlace } = useAdminPlaces();
   const [formData, setFormData] = React.useState({ name: '', location: '' });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,12 +71,11 @@ export const CreateVenuePage = ({ userEmail }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
-    const { error } = await adminClientApi.POST('/api/admin/places', {
-      body: { name: formData.name, location: formData.location },
+    const { error } = await createPlace({
+      name: formData.name,
+      location: formData.location,
     });
     if (error) {
-      setError('Failed to create venue');
       setIsSubmitting(false);
       return;
     }
@@ -132,13 +131,6 @@ export const CreateVenuePage = ({ userEmail }: Props) => {
                   <span className="text-[10px] font-medium text-zinc-600">City zone and municipality</span>
                 </div>
               </div>
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-3">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {error}
-                </div>
-              )}
 
               <div className="pt-6 flex flex-col sm:flex-row gap-4">
                 <button type="submit" disabled={isSubmitting} className={cn("flex-1 bg-amber-400 hover:bg-amber-300 text-black font-black uppercase tracking-widest py-5 px-8 rounded-2xl text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 group", "disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed")}>

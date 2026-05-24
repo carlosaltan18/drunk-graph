@@ -21,26 +21,29 @@ function fetchPage([, search, page, category]: DrinkKey): Promise<PagedDrinks> {
         params: { path: { category }, query: { search, page, limit: PAGE_SIZE } },
       })
       .then(r => {
-        if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+        if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
         return r.data!;
       });
   }
   return clientApi
     .GET('/api/drinks', { params: { query: { search, page, limit: PAGE_SIZE } } })
     .then(r => {
-      if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+      if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
       return r.data!;
     });
 }
 
-export function useDrinks(search: string, category: string) {
+export function useDrinks(search: string, category: string, initialPage?: PagedDrinks) {
   const getKey = (page: number, prev: PagedDrinks | null): DrinkKey | null => {
     if (prev && loadedCount(prev) >= (prev.total ?? 0)) return null;
     return ['/api/drinks', search, page, category];
   };
 
+  const fallbackData = initialPage ? [initialPage] : undefined;
+
   const { data, setSize, isLoading, isValidating } = useSWRInfinite<PagedDrinks>(getKey, fetchPage, {
     revalidateFirstPage: false,
+    fallbackData,
   });
 
   const drinks: ApiDrink[] = (data ?? []).flatMap(p => p.elements ?? []);

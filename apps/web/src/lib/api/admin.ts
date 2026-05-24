@@ -2,6 +2,8 @@ import createClient from "openapi-fetch"
 import type { paths } from "@generated/admin-api/schema.d.ts"
 import { adminAuth } from "@/lib/auth"
 import { headers } from "next/headers"
+import {fetch} from "next/dist/compiled/@edge-runtime/primitives";
+import {patchedFetch} from "@/lib/utils";
 
 // Hits Spring admin endpoints with an admin-tenant JWT — use in Server Components and Route Handlers only
 export async function createAdminApi() {
@@ -13,6 +15,7 @@ export async function createAdminApi() {
 
   return createClient<paths>({
     baseUrl: process.env.SPRING_API_URL,
+    fetch: patchedFetch,
     headers: {
       Authorization: `Bearer ${tokenData?.accessToken ?? ""}`,
     },

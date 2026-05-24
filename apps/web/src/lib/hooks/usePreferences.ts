@@ -8,7 +8,7 @@ type UserPreferencesRequest = components['schemas']['UserPreferencesRequest'];
 
 const KEY = '/api/users/me';
 const fetcher = () => clientApi.GET('/api/users/me').then(r => {
-  if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+  if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
   return r.data!;
 });
 
@@ -19,7 +19,7 @@ export function usePreferences(fallbackData?: User) {
     mutate({ ...(data ?? {}), ...prefs }, { revalidate: false });
     try {
       const res = await clientApi.PUT('/api/users/me', { body: prefs });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status} ${res.response.statusText}`);
       mutate();
     } catch (err) {
       mutate();

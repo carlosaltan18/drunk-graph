@@ -13,7 +13,7 @@ const STATS_KEY = '/api/users/me/stats';
 
 const fetcher = (): Promise<PagedConsumedDrink> =>
   clientApi.GET('/api/users/me/consumption', { params: { query: { limit: 100 } } }).then(r => {
-    if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+    if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
     return r.data!;
   });
 
@@ -33,7 +33,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
     mutate(optimistic, { revalidate: false });
     try {
       const res = await clientApi.POST('/api/users/me/consumption', { body: { drinkId, rating } });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status}: ${res.response.statusText}`);
       mutate();
       globalMutate(STATS_KEY);
     } catch (err) {
@@ -47,7 +47,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
     mutate(optimistic, { revalidate: false });
     try {
       const res = await clientApi.DELETE('/api/users/me/consumption/{drinkId}', { params: { path: { drinkId } } });
-      if (res.error) throw new Error(`${res.response.status} ${res.response.statusText}`);
+      if (!res.response.ok) throw new Error(`${res.response.status}: ${res.response.statusText}`);
       mutate();
     } catch (err) {
       mutate();

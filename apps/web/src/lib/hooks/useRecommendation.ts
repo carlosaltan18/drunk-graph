@@ -11,7 +11,7 @@ function fetchRecommendation([, drinkId]: RecommendationKey): Promise<ApiRecomme
   return clientApi
     .GET('/api/users/me/recommendations/{drinkId}', { params: { path: { drinkId } } })
     .then(r => {
-      if (r.error) throw new Error(`${r.response.status} ${r.response.statusText}`);
+      if (!r.response.ok) throw new Error(`${r.response.status}: ${r.response.statusText}`);
       return r.data!;
     });
 }
