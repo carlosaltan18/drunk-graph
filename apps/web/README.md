@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DrunkGraph — Web
 
-## Getting Started
+Next.js frontend for the DrunkGraph platform. Serves both the user-facing app (`/dashboard`) and the admin backoffice (`/admin`).
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 15** (App Router, RSC)
+- **BetterAuth** — session management (two isolated instances: user + admin)
+- **SWR** — client-side data fetching with optimistic updates
+- **openapi-fetch** — typed API client generated from OpenAPI spec
+- **Tailwind CSS** — styling
+- **Framer Motion** — animations
+
+## Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx                        # → redirects to /dashboard
+│   ├── dashboard/                      # user app (auth-gated via layout)
+│   │   ├── page.tsx                    # recommendation feed
+│   │   ├── browse/                     # drink browser (SSR + infinite scroll)
+│   │   ├── drinks/[id]/                # drink detail
+│   │   ├── history/                    # consumption log
+│   │   ├── profile/                    # user profile + taste preferences
+│   │   └── onboarding/                 # flavor setup (?back= supported)
+│   ├── admin/
+│   │   ├── page.tsx                    # → redirects to /admin/login
+│   │   ├── login/                      # admin login (FusionAuth hosted page)
+│   │   └── (protected)/
+│   │       ├── dashboard/              # venue list
+│   │       ├── places/[id]/            # drink editor for a venue
+│   │       └── places/[id]/import/     # batch drink uploader
+│   └── api/
+│       ├── proxy/[...path]/            # forwards requests to Spring as user JWT
+│       ├── admin-proxy/[...path]/      # forwards requests to Spring as admin JWT
+│       ├── auth/[...all]/              # BetterAuth user routes
+│       └── auth/admin/[...all]/        # BetterAuth admin routes
+├── components/magicpath/               # all UI components
+├── lib/
+│   ├── api/
+│   │   ├── client.ts                   # openapi-fetch client → /api/proxy
+│   │   ├── admin-client.ts             # openapi-fetch client → /api/admin-proxy
+│   │   ├── server.ts                   # server-side user API (attaches JWT directly)
+│   │   └── admin.ts                    # server-side admin API
+│   ├── auth.ts                         # BetterAuth instances (auth + adminAuth)
+│   └── hooks/                          # SWR hooks (useRecommendations, useDrinks, etc.)
+└── generated/                          # auto-generated OpenAPI TypeScript types
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Proxy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Browser-side API calls never hit Spring directly. They go through:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+Browser → /api/proxy/[...path] → Spring /api/[...path]
+```
 
-## Learn More
+The proxy handler attaches the FusionAuth JWT from the BetterAuth session. The admin proxy (`/api/admin-proxy`) does the same with the admin session. Content-Type is forwarded as-is, so multipart uploads work correctly.
 
-To learn more about Next.js, take a look at the following resources:
+## Auth
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See [`docs/auth.md`](../../docs/auth.md) for the full auth architecture. Short version:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/dashboard` is gated by `DashboardLayout` — redirects to `/login` if no user session
+- `/admin/(protected)` is gated by `AdminProtectedLayout` — redirects to `/admin/login` if no admin session or role !== `"admin"`
+- Both sessions can be active simultaneously in the same browser
 
-## Deploy on Vercel
+## Onboarding
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+New users are redirected to `/dashboard/onboarding` on first visit (detected via `onboarded` cookie). The onboarding page supports a `?back=<url>` query param — when present, a back button is shown and submit/skip redirect to that URL instead of `/dashboard`. Used by the "Edit preferences" link in the profile.
