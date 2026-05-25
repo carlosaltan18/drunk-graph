@@ -1,0 +1,17 @@
+.git
+.idea
+.vscode
+
+.env
+.env.*
+!.env.example
+
+node_modules
+apps/web/.next
+apps/web/out
+
+apps/api/target
+apps/api/openapi
+
+tmp
+*.log
