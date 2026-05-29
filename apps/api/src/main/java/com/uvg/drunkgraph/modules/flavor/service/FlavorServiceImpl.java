@@ -4,6 +4,9 @@ import com.uvg.drunkgraph.modules.flavor.dto.FlavorRequest;
 import com.uvg.drunkgraph.modules.flavor.model.Flavor;
 import com.uvg.drunkgraph.modules.flavor.repository.FlavorRepository;
 import org.springframework.stereotype.Service;
+import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -23,17 +26,39 @@ public class FlavorServiceImpl implements IFlavorService {
 
         @Override
     public Flavor create(FlavorRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+            if (flavorRepo.findByName(request.getName()).isPresent()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Flavor already exists: " + request.getName());
+            }
+
+            Flavor flavor = Flavor.builder()
+                    .name(request.getName())
+                    .description(request.getDescription() != null ? request.getDescription(): "")
+                    .build();
+
+            flavorRepo.create(flavor);
+            return flavor;
     }
 
     @Override
     public Flavor update(String name, FlavorRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        flavorRepo.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Flavor not found : " + name));
+
+        flavorRepo.update(name, request.getDescription() != null ? request.getDescription(): "");
+        return flavorRepo.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Flavor not found: " + name));
     }
+
+
 
     @Override
     public void delete(String name) {
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        flavorRepo.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Flavor not found: " + name));
+
+        flavorRepo.delete(name);
+
     }
 
 }

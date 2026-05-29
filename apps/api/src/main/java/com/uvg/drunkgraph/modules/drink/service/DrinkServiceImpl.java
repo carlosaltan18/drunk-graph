@@ -7,6 +7,7 @@ import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -37,17 +38,42 @@ public class DrinkServiceImpl implements IDrinkService {
 
     @Override
     public List<Drink> importBatch(String placeId, DrinkBatchRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (!drinkRepo.placeExists(placeId)) {
+            throw new ResourceNotFoundException("Place not found: " + placeId);
+        }
+
+        List<Drink> created = new ArrayList<>();
+
+        for (var item : request.getDrinks()) {
+            String id = drinkRepo.createInPlace(placeId, item);
+
+            Drink drink = drinkRepo.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Drink not found after creation: " + id));
+
+            created.add(drink);
+        }
+
+        return created;
     }
 
     @Override
     public Drink update(String id, DrinkEditRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        findById(id);
+
+        if (!drinkRepo.placeExists(request.getPlaceId())){
+            throw new ResourceNotFoundException("Place not found: " + request.getPlaceId());
+        }
+
+        drinkRepo.update(id, request);
+
+        return drinkRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Drink not found: " + id));
     }
 
     @Override
     public void delete(String id) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        findById(id);
+        drinkRepo.deleteById(id);
     }
 
 }
