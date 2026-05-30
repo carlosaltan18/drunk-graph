@@ -64,12 +64,16 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public User updatePreferences(String userId, com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest request) {
-        throw new UnsupportedOperationException("Not implemented");
+        findById(userId);
+        repo.updatePreferences(userId, request);
+        return repo.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 
     @Override
     public com.uvg.drunkgraph.modules.user.dto.UserStats getStats(String userId) {
-        throw new UnsupportedOperationException("Not implemented");
+        findById(userId);
+        return repo.getStats(userId);
     }
 
 }
