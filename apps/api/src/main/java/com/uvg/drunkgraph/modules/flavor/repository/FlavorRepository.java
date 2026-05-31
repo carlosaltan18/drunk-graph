@@ -17,14 +17,24 @@ public class FlavorRepository {
         this.neo4j = neo4j;
     }
 
-    public void create(Flavor f) {
-        neo4j.query("""
-                MERGE (f:Flavor {name: $name})
-                ON CREATE SET f.description = $description
+    private static Flavor mapFlavor(org.neo4j.driver.Record row) {
+        return Flavor.builder()
+                .name(row.get("name").asString())
+                .description(row.get("description").asString(""))
+                .build();
+    }
+
+    public Flavor create(Flavor f) {
+        return neo4j.query("""
+                CREATE (f:Flavor {name: $name, description: $description})
+                RETURN f.name AS name, f.description AS description
                 """)
                 .bind(f.getName()).to("name")
                 .bind(f.getDescription() != null ? f.getDescription() : "").to("description")
-                .run();
+                .fetchAs(Flavor.class)
+                .mappedBy((ts, row) -> mapFlavor(row))
+                .one()
+                .orElseThrow(() -> new IllegalStateException("Failed to create flavor: " + f.getName()));
     }
 
     public List<Flavor> listAll() {
@@ -44,25 +54,31 @@ public class FlavorRepository {
                 """)
                 .bind(name).to("name")
                 .fetchAs(Flavor.class)
-                .mappedBy((ts, row) -> Flavor.builder()
-                        .name(row.get("name").asString())
-                        .description(row.get("description").asString(""))
-                        .build())
+                .mappedBy((ts, row) -> mapFlavor(row))
                 .one();
     }
 
-    public void update(String name, String description) {
-        neo4j.query("""
+    public Flavor update(String name, String newName, String description) {
+        return neo4j.query("""
                 MATCH (f:Flavor {name: $name})
-                SET f.description = $description
+                SET f.name = $newName,
+                    f.description = $description
+                RETURN f.name AS name, f.description AS description
                 """)
                 .bind(name).to("name")
-                .bind(description).to("description")
-                .run();
+                .bind(newName).to("newName")
+                .bind(description != null ? description : "").to("description")
+                .fetchAs(Flavor.class)
+                .mappedBy((ts, row) -> mapFlavor(row))
+                .one()
+                .orElseThrow(() -> new IllegalStateException("Failed to update flavor: " + name));
     }
 
     public void delete(String name) {
-        neo4j.query("MATCH (f:Flavor {name: $name}) DETACH DELETE f")
+        neo4j.query("""
+                MATCH (f:Flavor {name: $name})
+                DETACH DELETE f
+                """)
                 .bind(name).to("name")
                 .run();
     }

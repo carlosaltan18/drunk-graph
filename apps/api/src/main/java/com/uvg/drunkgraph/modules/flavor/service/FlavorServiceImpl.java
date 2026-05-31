@@ -3,6 +3,8 @@ package com.uvg.drunkgraph.modules.flavor.service;
 import com.uvg.drunkgraph.modules.flavor.dto.FlavorRequest;
 import com.uvg.drunkgraph.modules.flavor.model.Flavor;
 import com.uvg.drunkgraph.modules.flavor.repository.FlavorRepository;
+import com.uvg.drunkgraph.modules.exception.ConflictException;
+import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,19 +23,36 @@ public class FlavorServiceImpl implements IFlavorService {
         return flavorRepo.listAll();
     }
 
-        @Override
+    @Override
     public Flavor create(FlavorRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (flavorRepo.findByName(request.getName()).isPresent()) {
+            throw new ConflictException("Flavor already exists: " + request.getName());
+        }
+
+        return flavorRepo.create(Flavor.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .build());
     }
 
     @Override
     public Flavor update(String name, FlavorRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        Flavor current = flavorRepo.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Flavor not found: " + name));
+
+        String requestedName = request.getName();
+        if (!current.getName().equals(requestedName) && flavorRepo.findByName(requestedName).isPresent()) {
+            throw new ConflictException("Flavor already exists: " + requestedName);
+        }
+
+        return flavorRepo.update(name, requestedName, request.getDescription());
     }
 
     @Override
     public void delete(String name) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        flavorRepo.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Flavor not found: " + name));
+        flavorRepo.delete(name);
     }
 
 }
