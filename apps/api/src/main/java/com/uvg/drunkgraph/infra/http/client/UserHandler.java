@@ -83,7 +83,7 @@ public class UserHandler {
     @PutMapping
     public User updatePreferences(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody UserPreferencesRequest request) {
+            @Valid @RequestBody UserPreferencesRequest request) {
         return service.updatePreferences(jwt.getSubject(), request);
     }
 

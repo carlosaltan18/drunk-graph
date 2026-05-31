@@ -5,6 +5,7 @@ import com.uvg.drunkgraph.modules.drink.model.Drink;
 import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
+import com.uvg.drunkgraph.modules.user.dto.UserStats;
 import com.uvg.drunkgraph.modules.user.model.User;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
@@ -213,5 +214,58 @@ public class UserRepository {
                 .all());
 
         return new PagedResult<>(elements, total, page, limit);
+    }
+
+    public void updatePreferences(String userId, com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest request) {
+        neo4j.query("""
+                MATCH (u:User {id: $userId})
+                SET u.budget_max = coalesce($budgetMax, u.budget_max),
+                    u.prefers_alcohol = coalesce($prefersAlcohol, u.prefers_alcohol)
+                """)
+                .bind(userId).to("userId")
+                .bind(request.getBudgetMax()).to("budgetMax")
+                .bind(request.getPrefersAlcohol()).to("prefersAlcohol")
+                .run();
+    }
+
+    public UserStats getStats(String userId) {
+        long tried = neo4j.query("""
+                MATCH (u:User {id: $userId})-[:CONSUMED]->(d:Drink)
+                RETURN count(DISTINCT d) AS tried
+                """)
+                .bind(userId).to("userId")
+                .fetchAs(Long.class)
+                .mappedBy((ts, row) -> row.get("tried").asLong())
+                .one()
+                .orElse(0L);
+
+        long venues = neo4j.query("""
+                MATCH (u:User {id: $userId})-[:CONSUMED]->(d:Drink)-[:SERVED_AT]->(p:Place)
+                RETURN count(DISTINCT p) AS venues
+                """)
+                .bind(userId).to("userId")
+                .fetchAs(Long.class)
+                .mappedBy((ts, row) -> row.get("venues").asLong())
+                .one()
+                .orElse(0L);
+
+        String favCategory = neo4j.query("""
+                MATCH (u:User {id: $userId})-[:CONSUMED]->(d:Drink)
+                WITH d.category AS category, count(DISTINCT d) AS drinkCount
+                ORDER BY drinkCount DESC, category ASC
+                RETURN category
+                LIMIT 1
+                """)
+                .bind(userId).to("userId")
+                .fetchAs(String.class)
+                .mappedBy((ts, row) -> row.get("category").isNull() ? null : row.get("category").asString())
+                .one()
+                .orElse(null);
+
+        return UserStats.builder()
+                .tried(Math.toIntExact(tried))
+                .venues(Math.toIntExact(venues))
+                .favCategory(favCategory)
+                .build();
     }
 }
