@@ -7,6 +7,7 @@ import com.uvg.drunkgraph.modules.drink.repository.DrinkRepository;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class DrinkServiceImpl implements IDrinkService {
     }
 
     @Override
+    @Transactional
     public List<Drink> importBatch(String placeId, DrinkBatchRequest request) {
         if (!drinkRepo.placeExists(placeId)) {
             throw new ResourceNotFoundException("Place not found: " + placeId);
