@@ -13,6 +13,9 @@ type ApiFlavor = components["schemas"]["Flavor"];
 
 interface Props {
   flavors: ApiFlavor[];
+  initialTastes?: Record<string, number>;
+  initialBudget?: number;
+  initialPrefersAlcohol?: boolean;
 }
 
 interface Flavor {
@@ -98,7 +101,12 @@ const FlavorSlider = ({
     </div>
   );
 };
-export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
+export const FlavorProfileSetup = ({
+  flavors: apiFlavors,
+  initialTastes = {},
+  initialBudget = 150,
+  initialPrefersAlcohol = true,
+}: Props) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const backUrl = searchParams.get("back");
@@ -110,11 +118,11 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
     description: f.description ?? "",
   }));
 
-  const [flavorValues, setFlavorValues] = React.useState<
-    Record<string, number>
-  >(Object.fromEntries(flavors.map((f) => [f.id, 0])));
-  const [maxSpend, setMaxSpend] = React.useState(150);
-  const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(false);
+  const [flavorValues, setFlavorValues] = React.useState<Record<string, number>>(
+    Object.fromEntries(flavors.map((f) => [f.id, initialTastes[f.id] ?? 0])),
+  );
+  const [maxSpend, setMaxSpend] = React.useState(initialBudget);
+  const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(!initialPrefersAlcohol);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleFlavorChange = (id: string, val: number) => {
