@@ -94,6 +94,7 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({
       drinks={drinks}
       userEmail={userEmail}
       venueName={placeName}
+      importHref={`/admin/places/${place.id}/import`}
       onBack={() => router.back()}
       onUpdate={handleUpdate}
       onImagesChange={(index, images) => handleUpdate(index, { images })}

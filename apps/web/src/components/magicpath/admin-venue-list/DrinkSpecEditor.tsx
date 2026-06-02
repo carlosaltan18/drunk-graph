@@ -11,6 +11,7 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 import { NumericInput } from "@/components/ui/NumericInput";
 import {
@@ -61,6 +62,7 @@ interface Props {
   onUpdate: (index: number, updates: Partial<EditorDrink>) => void;
   footer: (currentDrink: EditorDrink, currentIndex: number) => React.ReactNode;
   onImagesChange?: (drinkIndex: number, images: EditorDrink["images"]) => void;
+  importHref?: string;
 }
 
 export const DrinkSpecEditor: React.FC<Props> = ({
@@ -71,6 +73,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
   onUpdate,
   footer,
   onImagesChange,
+  importHref,
 }) => {
   const [currentDrinkIndex, setCurrentDrinkIndex] = React.useState(0);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
@@ -141,13 +144,28 @@ export const DrinkSpecEditor: React.FC<Props> = ({
           userName={userEmail.toUpperCase()}
           venueName={venueName.toUpperCase()}
         />
-        <div className="flex flex-1 flex-col items-center justify-center gap-4">
-          <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">
-            No drinks found for this venue.
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-6">
+          <UploadCloud className="w-12 h-12 text-zinc-700" />
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-white text-sm font-black uppercase tracking-widest">
+              No drinks yet
+            </p>
+            <p className="text-zinc-500 text-xs font-medium">
+              Import a batch to get started
+            </p>
+          </div>
+          {importHref && (
+            <Link
+              href={importHref}
+              className="flex items-center gap-2 px-6 py-3 bg-amber-400 hover:bg-amber-300 text-black text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors"
+            >
+              <UploadCloud className="w-4 h-4" />
+              Import Drinks
+            </Link>
+          )}
           <button
             onClick={onBack}
-            className="text-amber-400 text-xs font-black uppercase tracking-widest underline underline-offset-4"
+            className="text-zinc-600 text-xs font-black uppercase tracking-widest hover:text-zinc-400 transition-colors"
           >
             ← Back
           </button>
