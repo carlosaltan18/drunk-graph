@@ -11,10 +11,11 @@ type RecommendationKey = [route: string, drinkId: string];
 async function fetchRecommendation([
   ,
   drinkId,
-]: RecommendationKey): Promise<ApiRecommendation> {
+]: RecommendationKey): Promise<ApiRecommendation | null> {
   const r = await clientApi.GET("/api/users/me/recommendations/{drinkId}", {
     params: { path: { drinkId } },
   });
+  if (r.response.status === 404) return null;
   if (!r.response.ok)
     throw new ApiError(r.response.status, r.response.statusText);
   if (!r.data)
