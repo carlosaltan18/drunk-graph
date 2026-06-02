@@ -10,8 +10,10 @@ import {
   Plus,
   Trash2,
   UploadCloud,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import * as React from "react";
 import { NumericInput } from "@/components/ui/NumericInput";
 import {
@@ -22,7 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { SessionBar } from "./SessionBar";
 
@@ -61,7 +62,8 @@ interface Props {
   onBack: () => void;
   onUpdate: (index: number, updates: Partial<EditorDrink>) => void;
   footer: (currentDrink: EditorDrink, currentIndex: number) => React.ReactNode;
-  onImagesChange?: (drinkIndex: number, images: EditorDrink["images"]) => void;
+  onAddFiles?: (drinkIndex: number, files: File[]) => Promise<void>;
+  onRemoveImage?: (drinkIndex: number, imageIndex: number) => void;
   importHref?: string;
 }
 
@@ -72,7 +74,8 @@ export const DrinkSpecEditor: React.FC<Props> = ({
   onBack,
   onUpdate,
   footer,
-  onImagesChange,
+  onAddFiles,
+  onRemoveImage,
   importHref,
 }) => {
   const [currentDrinkIndex, setCurrentDrinkIndex] = React.useState(0);
@@ -80,31 +83,52 @@ export const DrinkSpecEditor: React.FC<Props> = ({
   const [confirmRemoveOpen, setConfirmRemoveOpen] = React.useState(false);
   const [addImagesOpen, setAddImagesOpen] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [dragOver, setDragOver] = React.useState(false);
+  const [stagedFiles, setStagedFiles] = React.useState<File[]>([]);
+  const [stagedPreviews, setStagedPreviews] = React.useState<string[]>([]);
   const addImageInputRef = React.useRef<HTMLInputElement>(null);
 
+  const stageFiles = (files: FileList | null) => {
+    if (!files) return;
+    const valid = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (valid.length === 0) return;
+    const urls = valid.map((f) => URL.createObjectURL(f));
+    setStagedFiles((prev) => [...prev, ...valid]);
+    setStagedPreviews((prev) => [...prev, ...urls]);
+  };
+
+  const removeStagedFile = (i: number) => {
+    URL.revokeObjectURL(stagedPreviews[i]);
+    setStagedFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setStagedPreviews((prev) => prev.filter((_, idx) => idx !== i));
+  };
+
+  const closeAddModal = () => {
+    stagedPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setStagedFiles([]);
+    setStagedPreviews([]);
+    setAddImagesOpen(false);
+    setDragOver(false);
+  };
+
+  const canEditImages = !!(onAddFiles && onRemoveImage);
   const currentDrink = drinks[currentDrinkIndex];
 
   const handleRemoveImage = () => {
-    if (!onImagesChange) return;
-    const next = currentDrink.images.filter((_, i) => i !== currentImageIndex);
-    onImagesChange(currentDrinkIndex, next);
-    setCurrentImageIndex(Math.min(currentImageIndex, next.length - 1));
+    if (!onRemoveImage) return;
+    onRemoveImage(currentDrinkIndex, currentImageIndex);
+    setCurrentImageIndex((i) => Math.max(0, i - 1));
     setConfirmRemoveOpen(false);
   };
 
-  const handleAddImages = async (files: FileList | null) => {
-    if (!files || !onImagesChange) return;
+  const handleConfirmAdd = async () => {
+    if (stagedFiles.length === 0 || !onAddFiles) return;
     setUploading(true);
     try {
-      const uploaded = await Promise.all(
-        Array.from(files)
-          .filter((f) => f.type.startsWith("image/"))
-          .map(uploadToCloudinary),
-      );
-      onImagesChange(currentDrinkIndex, [...currentDrink.images, ...uploaded]);
-      setAddImagesOpen(false);
+      await onAddFiles(currentDrinkIndex, stagedFiles);
+      closeAddModal();
     } catch {
-      // toast handled by uploadToCloudinary caller — just close
+      toast.error("Failed to add images");
     } finally {
       setUploading(false);
     }
@@ -247,7 +271,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                   </span>
                 </div>
 
-                {onImagesChange && (
+                {canEditImages && (
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-zinc-950 to-transparent p-4 flex items-center justify-between">
                     <button
                       type="button"
@@ -531,49 +555,105 @@ export const DrinkSpecEditor: React.FC<Props> = ({
       </Dialog>
 
       {/* Add images modal */}
-      <Dialog open={addImagesOpen} onOpenChange={setAddImagesOpen}>
-        <DialogContent className="bg-zinc-900 border border-zinc-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-white font-black uppercase tracking-tight">
-              Add Images
-            </DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Upload additional images for{" "}
-              <span className="text-white font-bold">{currentDrink.name}</span>.
-            </DialogDescription>
-          </DialogHeader>
-
+      <Dialog open={addImagesOpen} onOpenChange={(open) => { if (!open) closeAddModal(); }}>
+        <DialogContent className="bg-zinc-950 border border-zinc-800 text-white !w-[620px] !max-w-[620px] p-0 overflow-hidden">
           <input
             ref={addImageInputRef}
             type="file"
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(e) => handleAddImages(e.target.files)}
+            onChange={(e) => stageFiles(e.target.files)}
           />
 
-          <div
-            onClick={() => !uploading && addImageInputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (!uploading) handleAddImages(e.dataTransfer.files);
-            }}
-            className={cn(
-              "border-2 border-dashed rounded-xl p-12 flex flex-col items-center justify-center gap-4 transition-all",
-              uploading
-                ? "border-zinc-700 opacity-50 cursor-not-allowed"
-                : "border-zinc-700 hover:border-amber-400/50 cursor-pointer",
+          {/* Header */}
+          <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-zinc-800">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-tight text-white">
+                Add Images
+              </h2>
+              <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">
+                {currentDrink.name}
+              </p>
+            </div>
+            {stagedFiles.length > 0 && (
+              <span className="px-3 py-1 bg-amber-400/10 border border-amber-400/30 rounded-full text-[11px] font-black text-amber-400 uppercase tracking-widest">
+                {stagedFiles.length} selected
+              </span>
             )}
-          >
-            {uploading ? (
-              <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-            ) : (
-              <UploadCloud className="w-10 h-10 text-zinc-600" />
+          </div>
+
+          <div className="p-8 space-y-6">
+            {/* Dropzone */}
+            <div
+              onClick={() => !uploading && addImageInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                if (!uploading) stageFiles(e.dataTransfer.files);
+              }}
+              className={cn(
+                "relative border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden",
+                stagedFiles.length > 0 ? "py-6" : "py-16",
+                uploading ? "opacity-50 cursor-not-allowed pointer-events-none" :
+                dragOver ? "border-amber-400 bg-amber-400/5" : "border-zinc-700 hover:border-zinc-500 bg-zinc-900/40",
+              )}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#27272a_1px,_transparent_1px)] bg-[length:16px_16px] opacity-20 pointer-events-none" />
+              <UploadCloud className={cn("w-8 h-8 transition-colors relative z-10", dragOver ? "text-amber-400" : "text-zinc-600")} />
+              <div className="text-center relative z-10">
+                <span className="block text-xs font-black uppercase tracking-widest text-zinc-300">
+                  {dragOver ? "Release to add" : "Drop images here or click to browse"}
+                </span>
+                <span className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-1">
+                  PNG, JPG or WEBP
+                </span>
+              </div>
+            </div>
+
+            {/* Staged preview grid */}
+            {stagedPreviews.length > 0 && (
+              <div className="grid grid-cols-5 gap-3">
+                {stagedPreviews.map((url, i) => (
+                  <div key={url} className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-800">
+                    {/* biome-ignore lint/performance/noImgElement: blob URL, admin-only */}
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeStagedFile(i); }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded bg-black/70 border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-            <span className="text-xs font-black text-zinc-500 uppercase tracking-widest text-center">
-              {uploading ? "Uploading…" : "Drop images here or click to browse"}
-            </span>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-8 pb-8 gap-4">
+            <button
+              type="button"
+              onClick={closeAddModal}
+              className="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-[11px] font-black uppercase tracking-widest transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmAdd}
+              disabled={stagedFiles.length === 0 || uploading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed text-black text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors"
+            >
+              {uploading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</>
+              ) : (
+                <><Plus className="w-4 h-4" /> Add {stagedFiles.length > 0 ? stagedFiles.length : ""} Image{stagedFiles.length !== 1 ? "s" : ""}</>
+              )}
+            </button>
           </div>
         </DialogContent>
       </Dialog>

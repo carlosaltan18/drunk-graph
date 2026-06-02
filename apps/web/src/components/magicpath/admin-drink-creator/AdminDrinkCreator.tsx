@@ -155,6 +155,32 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
         venueName={placeId}
         onBack={() => setReviewing(false)}
         onUpdate={handleEditorUpdate}
+        onAddFiles={async (index, files) => {
+          const newUrls = files.map((f) => URL.createObjectURL(f));
+          setDrinks((prev) => {
+            const next = [...prev];
+            next[index] = {
+              ...next[index],
+              files: [...next[index].files, ...files],
+              previewUrls: [...next[index].previewUrls, ...newUrls],
+            };
+            return next;
+          });
+        }}
+        onRemoveImage={(index, imageIndex) => {
+          setDrinks((prev) => {
+            const next = [...prev];
+            const drink = next[index];
+            const urlToRevoke = drink.previewUrls[imageIndex];
+            if (urlToRevoke?.startsWith("blob:")) URL.revokeObjectURL(urlToRevoke);
+            next[index] = {
+              ...drink,
+              files: drink.files.filter((_, i) => i !== imageIndex),
+              previewUrls: drink.previewUrls.filter((_, i) => i !== imageIndex),
+            };
+            return next;
+          });
+        }}
         footer={() => (
           <BrandButton
             variant="admin"

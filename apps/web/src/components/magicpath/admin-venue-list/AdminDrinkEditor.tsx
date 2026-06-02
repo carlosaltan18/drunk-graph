@@ -4,6 +4,7 @@ import { UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
 import { BrandButton } from "./BrandButton";
 import {
@@ -97,7 +98,17 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({
       importHref={`/admin/places/${place.id}/import`}
       onBack={() => router.back()}
       onUpdate={handleUpdate}
-      onImagesChange={(index, images) => handleUpdate(index, { images })}
+      onAddFiles={async (index, files) => {
+        const uploaded = await Promise.all(files.map(uploadToCloudinary));
+        handleUpdate(index, {
+          images: [...drinks[index].images, ...uploaded],
+        });
+      }}
+      onRemoveImage={(index, imageIndex) => {
+        handleUpdate(index, {
+          images: drinks[index].images.filter((_, i) => i !== imageIndex),
+        });
+      }}
       footer={(currentDrink) => (
         <>
           <BrandButton
