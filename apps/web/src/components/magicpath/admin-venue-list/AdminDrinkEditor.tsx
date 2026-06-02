@@ -96,6 +96,7 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({
       venueName={placeName}
       onBack={() => router.back()}
       onUpdate={handleUpdate}
+      onImagesChange={(index, images) => handleUpdate(index, { images })}
       footer={(currentDrink) => (
         <>
           <BrandButton

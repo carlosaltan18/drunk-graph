@@ -6,11 +6,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Droplet,
+  Loader2,
   Plus,
   Trash2,
+  UploadCloud,
 } from "lucide-react";
 import * as React from "react";
 import { NumericInput } from "@/components/ui/NumericInput";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
 import { SessionBar } from "./SessionBar";
 
@@ -49,6 +60,7 @@ interface Props {
   onBack: () => void;
   onUpdate: (index: number, updates: Partial<EditorDrink>) => void;
   footer: (currentDrink: EditorDrink, currentIndex: number) => React.ReactNode;
+  onImagesChange?: (drinkIndex: number, images: EditorDrink["images"]) => void;
 }
 
 export const DrinkSpecEditor: React.FC<Props> = ({
@@ -58,11 +70,42 @@ export const DrinkSpecEditor: React.FC<Props> = ({
   onBack,
   onUpdate,
   footer,
+  onImagesChange,
 }) => {
   const [currentDrinkIndex, setCurrentDrinkIndex] = React.useState(0);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = React.useState(false);
+  const [addImagesOpen, setAddImagesOpen] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const addImageInputRef = React.useRef<HTMLInputElement>(null);
 
   const currentDrink = drinks[currentDrinkIndex];
+
+  const handleRemoveImage = () => {
+    if (!onImagesChange) return;
+    const next = currentDrink.images.filter((_, i) => i !== currentImageIndex);
+    onImagesChange(currentDrinkIndex, next);
+    setCurrentImageIndex(Math.min(currentImageIndex, next.length - 1));
+    setConfirmRemoveOpen(false);
+  };
+
+  const handleAddImages = async (files: FileList | null) => {
+    if (!files || !onImagesChange) return;
+    setUploading(true);
+    try {
+      const uploaded = await Promise.all(
+        Array.from(files)
+          .filter((f) => f.type.startsWith("image/"))
+          .map(uploadToCloudinary),
+      );
+      onImagesChange(currentDrinkIndex, [...currentDrink.images, ...uploaded]);
+      setAddImagesOpen(false);
+    } catch {
+      // toast handled by uploadToCloudinary caller — just close
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleNextDrink = () => {
     if (currentDrinkIndex < drinks.length - 1) {
@@ -186,20 +229,31 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                   </span>
                 </div>
 
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-zinc-950 to-transparent p-4 flex items-center justify-between">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900/90 hover:bg-zinc-800 rounded-lg border border-white/10 transition-colors group">
-                    <Plus className="w-4 h-4 text-amber-400" />
-                    <span className="text-[11px] font-black text-amber-400 uppercase tracking-widest">
-                      Add Image
-                    </span>
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900/90 hover:bg-zinc-800 rounded-lg border border-white/10 transition-colors group">
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                    <span className="text-[11px] font-black text-red-500 uppercase tracking-widest">
-                      Remove
-                    </span>
-                  </button>
-                </div>
+                {onImagesChange && (
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-zinc-950 to-transparent p-4 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setAddImagesOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-zinc-900/90 hover:bg-zinc-800 rounded-lg border border-white/10 transition-colors"
+                    >
+                      <Plus className="w-4 h-4 text-amber-400" />
+                      <span className="text-[11px] font-black text-amber-400 uppercase tracking-widest">
+                        Add Image
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRemoveOpen(true)}
+                      disabled={currentDrink.images.length === 0}
+                      className="flex items-center gap-2 px-4 py-2 bg-zinc-900/90 hover:bg-zinc-800 rounded-lg border border-white/10 transition-colors disabled:opacity-30"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                      <span className="text-[11px] font-black text-red-500 uppercase tracking-widest">
+                        Remove
+                      </span>
+                    </button>
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
 
@@ -425,6 +479,86 @@ export const DrinkSpecEditor: React.FC<Props> = ({
           management.
         </p>
       </div>
+
+      {/* Remove image confirmation dialog */}
+      <Dialog open={confirmRemoveOpen} onOpenChange={setConfirmRemoveOpen}>
+        <DialogContent className="bg-zinc-900 border border-zinc-700 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white font-black uppercase tracking-tight">
+              Remove Image?
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              This will remove image {currentImageIndex + 1} from{" "}
+              <span className="text-white font-bold">{currentDrink.name}</span>.
+              This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setConfirmRemoveOpen(false)}
+              className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-black uppercase tracking-widest transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-widest transition-colors"
+            >
+              Remove
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add images modal */}
+      <Dialog open={addImagesOpen} onOpenChange={setAddImagesOpen}>
+        <DialogContent className="bg-zinc-900 border border-zinc-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white font-black uppercase tracking-tight">
+              Add Images
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Upload additional images for{" "}
+              <span className="text-white font-bold">{currentDrink.name}</span>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <input
+            ref={addImageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => handleAddImages(e.target.files)}
+          />
+
+          <div
+            onClick={() => !uploading && addImageInputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (!uploading) handleAddImages(e.dataTransfer.files);
+            }}
+            className={cn(
+              "border-2 border-dashed rounded-xl p-12 flex flex-col items-center justify-center gap-4 transition-all",
+              uploading
+                ? "border-zinc-700 opacity-50 cursor-not-allowed"
+                : "border-zinc-700 hover:border-amber-400/50 cursor-pointer",
+            )}
+          >
+            {uploading ? (
+              <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+            ) : (
+              <UploadCloud className="w-10 h-10 text-zinc-600" />
+            )}
+            <span className="text-xs font-black text-zinc-500 uppercase tracking-widest text-center">
+              {uploading ? "Uploading…" : "Drop images here or click to browse"}
+            </span>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
