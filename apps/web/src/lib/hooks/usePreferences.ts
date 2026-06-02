@@ -1,6 +1,7 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useSWR from "swr";
+import { ApiError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 type User = components["schemas"]["User"];
@@ -10,7 +11,7 @@ const KEY = "/api/users/me";
 const fetcher = () =>
   clientApi.GET("/api/users/me").then((r) => {
     if (!r.response.ok)
-      throw new Error(`${r.response.status}: ${r.response.statusText}`);
+      throw new ApiError(r.response.status, r.response.statusText);
     return r.data as User;
   });
 
@@ -24,7 +25,7 @@ export function usePreferences(fallbackData?: User) {
     try {
       const res = await clientApi.PUT("/api/users/me", { body: prefs });
       if (!res.response.ok)
-        throw new Error(`${res.response.status} ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
     } catch (err) {
       void mutate();

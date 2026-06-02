@@ -2,6 +2,7 @@
 import type { components } from "@generated/admin-api/schema.d.ts";
 import { toast } from "sonner";
 import useSWR from "swr";
+import { ApiError } from "@/lib/api/error";
 import { adminClientApi } from "@/lib/api/admin-client";
 
 type PlaceRequest = components["schemas"]["PlaceRequest"];
@@ -12,7 +13,7 @@ const KEY = "/api/admin/places";
 const fetcher = (): Promise<PagedResultPlace> =>
   adminClientApi.GET("/api/admin/places").then((r) => {
     if (!r.response.ok)
-      throw new Error(`${r.response.status}: ${r.response.statusText}`);
+      throw new ApiError(r.response.status, r.response.statusText);
     if (!r.data) throw new Error("Empty response from /api/admin/places");
     return r.data;
   });
@@ -28,7 +29,7 @@ export function useAdminPlaces(fallbackData?: PagedResultPlace) {
         body: request,
       });
       if (!res.response.ok)
-        throw new Error(`${res.response.status}: ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
       toast.success("Venue created successfully");
       return { data: res.data, error: null };

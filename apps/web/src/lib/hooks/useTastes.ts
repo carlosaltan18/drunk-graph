@@ -1,6 +1,7 @@
 "use client";
 import { toast } from "sonner";
 import useSWR from "swr";
+import { ApiError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 const KEY = "/api/users/me/tastes";
@@ -8,7 +9,7 @@ const KEY = "/api/users/me/tastes";
 const fetcher = () =>
   clientApi.GET("/api/users/me/tastes").then((r) => {
     if (!r.response.ok)
-      throw new Error(`${r.response.status}: ${r.response.statusText}`);
+      throw new ApiError(r.response.status, r.response.statusText);
     return r.data ?? {};
   });
 
@@ -26,7 +27,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
         body: { flavor, weight },
       });
       if (!res.response.ok)
-        throw new Error(`${res.response.status}: ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
     } catch (err) {
       void mutate();
@@ -43,7 +44,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
         params: { path: { flavor } },
       });
       if (!res.response.ok)
-        throw new Error(`${res.response.status}: ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
     } catch (err) {
       void mutate();

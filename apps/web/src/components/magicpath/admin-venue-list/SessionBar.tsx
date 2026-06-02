@@ -2,7 +2,6 @@
 import { LogOut, MapPin, Radio, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { adminAuthClient } from "@/lib/auth-client";
 
 interface SessionBarProps {
   type: "admin" | "client";
@@ -22,9 +21,7 @@ export const SessionBar: React.FC<SessionBarProps> = ({
   const statusColor = isAdmin ? "bg-amber-400" : "bg-orange-500";
 
   const handleSignOut = () => {
-    adminAuthClient.signOut({
-      fetchOptions: { onSuccess: () => router.push("/admin/login") },
-    });
+    router.push("/api/auth-actions/sign-out?role=admin");
   };
 
   return (

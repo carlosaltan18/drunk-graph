@@ -68,10 +68,11 @@
           "oauthConfiguration": {
             "clientSecret": "#{drunkgraphClientSecret}",
             "authorizedRedirectURLs": [
-              "http://localhost:3000/api/auth/oauth2/callback/fusionauth"
+              "http://localhost:3000/api/auth/oauth2/callback/fusionauth",
+              "http://localhost:3000/login"
             ],
             "clientAuthenticationPolicy": "Required",
-            "logoutURL": "http://localhost:3000",
+            "logoutURL": "http://localhost:3000/login",
             "requireRegistration": false,
             "enabledGrants": [
               "authorization_code",
@@ -186,10 +187,11 @@
           "oauthConfiguration": {
             "clientSecret": "#{backofficeClientSecret}",
             "authorizedRedirectURLs": [
-              "http://localhost:3000/api/auth/admin/oauth2/callback/fusionauth-admin"
+              "http://localhost:3000/api/auth/admin/oauth2/callback/fusionauth-admin",
+              "http://localhost:3000/admin/login"
             ],
             "clientAuthenticationPolicy": "Required",
-            "logoutURL": "http://localhost:3000",
+            "logoutURL": "http://localhost:3000/admin/login",
             "requireRegistration": true,
             "enabledGrants": [
               "authorization_code",

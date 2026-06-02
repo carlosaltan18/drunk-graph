@@ -4,7 +4,6 @@ import { ChevronRight, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { ClientBottomNav } from "@/components/magicpath/shared/ClientBottomNav";
-import { authClient } from "@/lib/auth-client";
 import { usePreferences } from "@/lib/hooks/usePreferences";
 import { useStats } from "@/lib/hooks/useStats";
 import { useTastes } from "@/lib/hooks/useTastes";
@@ -69,9 +68,7 @@ export const ProfileScreen = ({
   const initial = (user?.alias ?? user?.id ?? "?")[0].toUpperCase();
 
   const handleSignOut = () => {
-    authClient.signOut({
-      fetchOptions: { onSuccess: () => router.push("/login?signout=true") },
-    });
+    router.push("/api/auth-actions/sign-out?role=user");
   };
 
   return (

@@ -8,8 +8,11 @@ export async function GET(request: NextRequest) {
   const role = request.nextUrl.searchParams.get("role");
 
   const fusionAuthUrl = env.FUSIONAUTH_URL;
-  const clientId =
-    role === "admin" ? env.BACKOFFICE_CLIENT_ID : env.FUSIONAUTH_CLIENT_ID;
+  const isAdmin = role === "admin";
+  const clientId = isAdmin ? env.BACKOFFICE_CLIENT_ID : env.FUSIONAUTH_CLIENT_ID;
+  const postLogoutRedirect = isAdmin
+    ? `${env.NEXT_PUBLIC_APP_URL}/admin/login`
+    : `${env.NEXT_PUBLIC_APP_URL}/login`;
 
   const instance = role === "admin" ? adminAuth : auth;
   const response = await instance.handler(
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
   );
 
   const redirect = NextResponse.redirect(
-    `${fusionAuthUrl}/oauth2/logout?client_id=${clientId}`,
+    `${fusionAuthUrl}/oauth2/logout?client_id=${clientId}&post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirect)}`,
   );
 
   response.headers.forEach((value, key) => {

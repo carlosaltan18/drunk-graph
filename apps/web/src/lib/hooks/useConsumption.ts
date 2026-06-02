@@ -3,6 +3,7 @@ import type { components } from "@generated/api/schema.d.ts";
 import React from "react";
 import { toast } from "sonner";
 import useSWR, { mutate as globalMutate } from "swr";
+import { ApiError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
@@ -16,7 +17,7 @@ const fetcher = (): Promise<PagedConsumedDrink> =>
     .GET("/api/users/me/consumption", { params: { query: { limit: 100 } } })
     .then((r) => {
       if (!r.response.ok)
-        throw new Error(`${r.response.status}: ${r.response.statusText}`);
+        throw new ApiError(r.response.status, r.response.statusText);
       if (!r.data)
         throw new Error("Empty response from /api/users/me/consumption");
       return r.data;
@@ -54,7 +55,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
         body: { drinkId, rating },
       });
       if (!res.response.ok)
-        throw new Error(`${res.response.status}: ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
       void globalMutate(STATS_KEY);
     } catch (err) {
@@ -75,7 +76,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
         { params: { path: { drinkId } } },
       );
       if (!res.response.ok)
-        throw new Error(`${res.response.status}: ${res.response.statusText}`);
+        throw new ApiError(res.response.status, res.response.statusText);
       void mutate();
     } catch (err) {
       void mutate();

@@ -121,9 +121,10 @@ await fa(
         clientSecret: process.env.DRUNKGRAPH_CLIENT_SECRET,
         authorizedRedirectURLs: [
           `${APP_URL}/api/auth/oauth2/callback/fusionauth`,
+          `${APP_URL}/login`,
         ],
         clientAuthenticationPolicy: "Required",
-        logoutURL: APP_URL,
+        logoutURL: `${APP_URL}/login`,
         requireRegistration: false,
         enabledGrants: ["authorization_code", "refresh_token"],
         generateRefreshTokens: true,
@@ -233,9 +234,10 @@ await fa(
         clientSecret: process.env.BACKOFFICE_CLIENT_SECRET,
         authorizedRedirectURLs: [
           `${APP_URL}/api/auth/admin/oauth2/callback/fusionauth-admin`,
+          `${APP_URL}/admin/login`,
         ],
         clientAuthenticationPolicy: "Required",
-        logoutURL: APP_URL,
+        logoutURL: `${APP_URL}/admin/login`,
         requireRegistration: true,
         enabledGrants: ["authorization_code", "refresh_token"],
         generateRefreshTokens: true,
