@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import * as React from "react";
 import { type StagedDrink, useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
+import { DrinkSpecEditor, type EditorDrink } from "@/components/magicpath/admin-venue-list/DrinkSpecEditor";
 import { cn } from "@/lib/utils";
 import { BrandButton } from "./BrandButton";
 import { SessionBar } from "./SessionBar";
@@ -30,6 +31,26 @@ interface Props {
   userEmail: string;
 }
 
+function stagedToEditorDrink(d: StagedDrink): EditorDrink {
+  return {
+    id: d.id,
+    name: d.name,
+    category: d.category,
+    price: d.price,
+    alcoholPercent: d.alcoholPct,
+    place: "",
+    images: d.previewUrls.map((url) => ({ id: "", url })),
+    flavors: {
+      sweet: d.flavors.sweet ?? 0,
+      bitter: d.flavors.bitter ?? 0,
+      sour: d.flavors.sour ?? 0,
+      smoky: d.flavors.smoky ?? 0,
+      citrus: d.flavors.citrus ?? 0,
+      herbal: d.flavors.herbal ?? 0,
+    },
+  };
+}
+
 export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
   const { importBatch } = useAdminDrinks(placeId);
   const [images, setImages] = React.useState<RawImage[]>([]);
@@ -37,6 +58,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [importing, setImporting] = React.useState(false);
   const [imported, setImported] = React.useState(false);
+  const [reviewing, setReviewing] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const selectedCount = images.filter((img) => img.isSelected).length;
@@ -80,6 +102,10 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
         previewUrls: selected.map((img) => img.previewUrl),
         files: selected.map((img) => img.file),
         status: "pending",
+        category: "Cocktail",
+        price: 0,
+        alcoholPct: 0,
+        flavors: { sweet: 0, bitter: 0, sour: 0, smoky: 0, citrus: 0, herbal: 0 },
       },
     ]);
     setImages((prev) => prev.filter((img) => !img.isSelected));
@@ -91,6 +117,21 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
   const renameDrink = (id: string, name: string) =>
     setDrinks((prev) => prev.map((d) => (d.id === id ? { ...d, name } : d)));
 
+  const handleEditorUpdate = (index: number, updates: Partial<EditorDrink>) => {
+    setDrinks((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.category !== undefined && { category: updates.category }),
+        ...(updates.price !== undefined && { price: updates.price }),
+        ...(updates.alcoholPercent !== undefined && { alcoholPct: updates.alcoholPercent }),
+        ...(updates.flavors !== undefined && { flavors: updates.flavors as unknown as Record<string, number> }),
+      };
+      return next;
+    });
+  };
+
   const handleImport = async () => {
     if (drinks.length === 0 || importing) return;
     setImporting(true);
@@ -100,8 +141,41 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
       );
     const ok = await importBatch(drinks, onProgress);
     setImporting(false);
-    if (ok) setImported(true);
+    if (ok) {
+      setReviewing(false);
+      setImported(true);
+    }
   };
+
+  if (reviewing) {
+    return (
+      <DrinkSpecEditor
+        drinks={drinks.map(stagedToEditorDrink)}
+        userEmail={userEmail}
+        venueName={placeId}
+        onBack={() => setReviewing(false)}
+        onUpdate={handleEditorUpdate}
+        footer={() => (
+          <BrandButton
+            variant="admin"
+            size="xl"
+            className="w-full"
+            showArrow
+            disabled={importing}
+            onClick={handleImport}
+          >
+            {importing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Importing…
+              </span>
+            ) : (
+              `Import ${drinks.length} ${drinks.length === 1 ? "Drink" : "Drinks"}`
+            )}
+          </BrandButton>
+        )}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white font-sans selection:bg-amber-400 selection:text-black">
@@ -191,11 +265,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       key={img.id}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{
-                        opacity: 0,
-                        scale: 0.8,
-                        transition: { duration: 0.2 },
-                      }}
+                      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
                       className={cn(
                         "group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
                         img.isSelected
@@ -222,6 +292,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                         )}
                       </div>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeImage(img.id);
@@ -239,7 +310,6 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
 
           {/* Right: Staging & Progress */}
           <aside className="lg:col-span-4 space-y-12">
-            {/* Zone 2: Staging */}
             <section className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -289,7 +359,6 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
               </div>
             </section>
 
-            {/* Zone 3: Staged Drinks */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.3em]">
@@ -307,11 +376,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       key={drink.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{
-                        opacity: 0,
-                        x: 20,
-                        transition: { duration: 0.15 },
-                      }}
+                      exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
                       className="group bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700 transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -321,11 +386,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                               key={idx}
                               className="w-10 h-10 rounded border-2 border-zinc-900 overflow-hidden bg-zinc-800"
                             >
-                              <img
-                                src={url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={url} alt="" className="w-full h-full object-cover" />
                             </div>
                           ))}
                           {drink.previewUrls.length > 3 && (
@@ -339,13 +400,9 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                             <input
                               autoFocus
                               value={drink.name}
-                              onChange={(e) =>
-                                renameDrink(drink.id, e.target.value)
-                              }
+                              onChange={(e) => renameDrink(drink.id, e.target.value)}
                               onBlur={() => setEditingId(null)}
-                              onKeyDown={(e) =>
-                                e.key === "Enter" && setEditingId(null)
-                              }
+                              onKeyDown={(e) => e.key === "Enter" && setEditingId(null)}
                               className="w-full bg-zinc-800 border border-amber-400/50 rounded px-2 py-0.5 text-xs font-black uppercase tracking-tight text-white outline-none"
                             />
                           ) : (
@@ -372,12 +429,14 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                         {drink.status === "pending" && (
                           <>
                             <button
+                              type="button"
                               onClick={() => setEditingId(drink.id)}
                               className="p-1.5 rounded hover:bg-zinc-800 text-zinc-500 hover:text-amber-400 transition-all"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => removeStagedDrink(drink.id)}
                               className="p-1.5 rounded hover:bg-zinc-800 text-zinc-500 hover:text-red-400 transition-all"
                             >
@@ -405,16 +464,9 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                   size="lg"
                   className="w-full"
                   showArrow
-                  disabled={importing}
-                  onClick={handleImport}
+                  onClick={() => setReviewing(true)}
                 >
-                  {importing ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Importing…
-                    </span>
-                  ) : (
-                    `Import ${drinks.length} ${drinks.length === 1 ? "Drink" : "Drinks"}`
-                  )}
+                  Review & Import
                 </BrandButton>
               )}
 

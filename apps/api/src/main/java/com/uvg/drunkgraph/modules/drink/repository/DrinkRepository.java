@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.drink.repository;
 
 import com.uvg.drunkgraph.infra.cloudinary.ImageResolver;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.drink.model.DrinkImage;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.neo4j.driver.Value;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -37,6 +38,13 @@ public class DrinkRepository {
                 ? List.of()
                 : row.get("images").asList(v -> v.asString());
 
+        List<String> urls = imageResolver.resolve(publicIds);
+
+        List<DrinkImage> images = new ArrayList<>();
+        for (int i = 0; i < publicIds.size(); i++) {
+            images.add(new DrinkImage(publicIds.get(i), i < urls.size() ? urls.get(i) : ""));
+        }
+
         return Drink.builder()
                 .id(row.get("id").asString())
                 .name(row.get("name").asString())
@@ -45,7 +53,7 @@ public class DrinkRepository {
                 .placeName(row.get("placeName").isNull() ? null : row.get("placeName").asString())
                 .alcoholPct(row.get("alcohol").asDouble())
                 .price(row.get("price").asDouble())
-                .imageUrls(imageResolver.resolve(publicIds))
+                .images(images)
                 .flavors(mapFlavors(row.get("flavors")))
                 .build();
     }

@@ -83,7 +83,7 @@ function toDrink(d: ApiDrink): Drink {
     name: d.name ?? "Unknown",
     category: d.category ?? "cocktail",
     price: `Q ${d.price?.toFixed(0) ?? "—"}`,
-    imageUrl: d.imageUrls?.[0] ?? null,
+    imageUrl: d.images?.[0]?.url ?? null,
     gradient:
       CATEGORY_GRADIENTS[d.category ?? ""] ?? "from-zinc-700 to-zinc-900",
   };

@@ -25,6 +25,10 @@ export interface StagedDrink {
   files: File[];
   previewUrls: string[];
   status: "pending" | "uploading" | "done" | "error";
+  category: string;
+  price: number;
+  alcoholPct: number;
+  flavors: Record<string, number>;
 }
 
 async function uploadToCloudinary(
@@ -120,7 +124,10 @@ export function useAdminDrinks(
             onProgress(drink.id, "done");
             return {
               name: drink.name,
-              category: "cocktail",
+              category: drink.category,
+              price: drink.price,
+              alcoholPct: drink.alcoholPct,
+              flavors: drink.flavors,
               imagePublicIds: publicIds,
             };
           } catch {

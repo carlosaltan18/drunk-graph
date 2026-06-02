@@ -147,7 +147,7 @@ export const DrinkDetailScreen = ({
     <main className="flex flex-col w-full min-h-screen bg-zinc-950 text-white font-sans selection:bg-orange-500/30 overflow-x-hidden pb-24">
       {/* Top Image Section */}
       <div className="relative">
-        <ImageCarousel images={drink?.imageUrls ?? []} />
+        <ImageCarousel images={(drink?.images ?? []).map((img) => img.url ?? "").filter(Boolean)} />
         <button
           onClick={() => router.back()}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform"

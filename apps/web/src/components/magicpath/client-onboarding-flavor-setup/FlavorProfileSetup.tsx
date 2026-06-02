@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
+import { NumericInput } from "@/components/ui/NumericInput";
 import { usePreferences } from "@/lib/hooks/usePreferences";
 import { useTastes } from "@/lib/hooks/useTastes";
 import { cn } from "@/lib/utils";
@@ -112,7 +113,7 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
   const [flavorValues, setFlavorValues] = React.useState<
     Record<string, number>
   >(Object.fromEntries(flavors.map((f) => [f.id, 0])));
-  const [maxSpend, setMaxSpend] = React.useState<string>("150");
+  const [maxSpend, setMaxSpend] = React.useState(150);
   const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -130,7 +131,7 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
     await Promise.all([
       ...activeTastes.map(([flavor, weight]) => addTaste(flavor, weight)),
       updatePreferences({
-        budgetMax: parseFloat(maxSpend) || undefined,
+        budgetMax: maxSpend || undefined,
         prefersAlcohol: !isNonAlcoholic,
       }),
     ]);
@@ -237,11 +238,11 @@ export const FlavorProfileSetup = ({ flavors: apiFlavors }: Props) => {
             <span className="absolute left-4 text-orange-500 font-black text-lg group-focus-within:scale-110 transition-transform">
               Q
             </span>
-            <input
-              type="number"
-              placeholder="150"
+            <NumericInput
               value={maxSpend}
-              onChange={(e) => setMaxSpend(e.target.value)}
+              onChange={setMaxSpend}
+              min={0}
+              placeholder="150"
               className="w-full bg-zinc-900 border-none rounded-xl py-4 pl-10 pr-4 text-white font-black text-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-zinc-700"
             />
           </div>

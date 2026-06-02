@@ -42,9 +42,10 @@ function fakeDrink(placeId) {
     alcoholPct: faker.number.float({ min: 0, max: 45, fractionDigits: 1 }),
     price: faker.number.float({ min: 20, max: 200, fractionDigits: 2 }),
     flavors: fakeFlavors(),
-    imageUrls: Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () =>
-      faker.image.urlPicsumPhotos({ width: 400, height: 400 })
-    ),
+    images: Array.from({ length: faker.number.int({ min: 1, max: 3 }) }, () => ({
+      id: `drinks/${faker.string.alphanumeric(20)}`,
+      url: faker.image.urlPicsumPhotos({ width: 400, height: 400 }),
+    })),
   }
 }
 
@@ -55,7 +56,7 @@ function fakeRecommendation() {
     drink: drink.name,
     category: drink.category,
     price: drink.price,
-    imageUrls: drink.imageUrls,
+    imageUrls: drink.images.map(img => img.url),
     scoreFlavor: faker.number.float({ min: 0.3, max: 1.0, fractionDigits: 2 }),
     scorePrice: faker.number.float({ min: 0.0, max: 0.2, fractionDigits: 2 }),
     scoreFinal: faker.number.float({ min: 0.3, max: 1.0, fractionDigits: 2 }),

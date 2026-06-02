@@ -320,13 +320,11 @@ export interface components {
             flavors?: {
                 [key: string]: number;
             };
-            /**
-             * @example [
-             *       "https://res.cloudinary.com/demo/image/upload/drinks/mojito.jpg",
-             *       "https://res.cloudinary.com/demo/image/upload/drinks/mojito2.jpg"
-             *     ]
-             */
-            imageUrls?: string[];
+            images?: components["schemas"]["DrinkImage"][];
+        };
+        DrinkImage: {
+            id?: string;
+            url?: string;
         };
         PagedResultDrink: {
             elements?: components["schemas"]["Drink"][];

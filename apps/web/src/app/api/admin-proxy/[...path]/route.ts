@@ -43,6 +43,7 @@ async function handler(
   const upstreamContentType = upstream.headers.get("content-type") ?? "";
   const text = await upstream.text();
 
+
   if (upstreamContentType.includes("application/json")) {
     const data = text ? JSON.parse(text) : null;
     return NextResponse.json(data, { status: upstream.status });
