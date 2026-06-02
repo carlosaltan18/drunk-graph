@@ -6,6 +6,8 @@ import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.neo4j.driver.Value;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Repository;
+import com.uvg.drunkgraph.modules.drink.dto.DrinkEditRequest;
+import com.uvg.drunkgraph.modules.drink.dto.DrinkItemRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -135,6 +137,112 @@ public class DrinkRepository {
                 .all());
 
         return new PagedResult<>(elements, total, page, limit);
+    }
+
+
+    private static List<Map<String, Object>> flavorRows(Map<String, Double> flavors) {
+        if (flavors == null) {
+            return List.of();
+        }
+
+        return flavors.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                .map(entry -> Map.<String, Object>of(
+                        "name", entry.getKey(),
+                        "intensity", entry.getValue()
+                ))
+                .toList();
+    }
+
+    private static List<String> imagesOrEmpty(List<String> imagePublicIds) {
+        return imagePublicIds == null ? List.of() : imagePublicIds;
+    }
+
+    public boolean placeExists(String placeId) {
+        return neo4j.query("""
+            MATCH (p:Place {id: $placeId})
+            RETURN count(p) > 0 AS exists
+            """)
+                .bind(placeId).to("placeId")
+                .fetchAs(Boolean.class)
+                .mappedBy((ts, row) -> row.get("exists").asBoolean())
+                .one()
+                .orElse(false);
+    }
+
+    public void update(String id, DrinkEditRequest request) {
+        neo4j.query("""
+            MATCH (d:Drink {id: $id})
+            MATCH (p:Place {id: $placeId})
+            SET d.name = $name,
+                d.category = $category,
+                d.alcohol_pct = $alcoholPct,
+                d.price = $price,
+                d.images = $images
+            WITH d, p, $flavors AS flavors
+            OPTIONAL MATCH (d)-[served:SERVED_AT]->(:Place)
+            DELETE served
+            CREATE (d)-[:SERVED_AT]->(p)
+            WITH d, flavors
+            OPTIONAL MATCH (d)-[oldFlavor:HAS_FLAVOR]->(:Flavor)
+            DELETE oldFlavor
+            WITH d, flavors
+            FOREACH (flavor IN flavors |
+                MERGE (f:Flavor {name: flavor.name})
+                CREATE (d)-[:HAS_FLAVOR {intensity: flavor.intensity}]->(f)
+            )
+            """)
+                .bind(id).to("id")
+                .bind(request.getPlaceId()).to("placeId")
+                .bind(request.getName()).to("name")
+                .bind(request.getCategory()).to("category")
+                .bind(request.getAlcoholPct()).to("alcoholPct")
+                .bind(request.getPrice()).to("price")
+                .bind(imagesOrEmpty(request.getImagePublicIds())).to("images")
+                .bind(flavorRows(request.getFlavors())).to("flavors")
+                .run();
+    }
+
+    public void deleteById(String id) {
+        neo4j.query("""
+            MATCH (d:Drink {id: $id})
+            DETACH DELETE d
+            """)
+                .bind(id).to("id")
+                .run();
+    }
+
+    public String createInPlace(String placeId, DrinkItemRequest item) {
+        String id = UUID.randomUUID().toString();
+
+        neo4j.query("""
+            MATCH (p:Place {id: $placeId})
+            CREATE (d:Drink {
+                id: $id,
+                name: $name,
+                category: $category,
+                alcohol_pct: $alcoholPct,
+                price: $price,
+                images: $images
+            })
+            CREATE (d)-[:SERVED_AT]->(p)
+            WITH d, $flavors AS flavors
+            FOREACH (flavor IN flavors |
+                MERGE (f:Flavor {name: flavor.name})
+                CREATE (d)-[:HAS_FLAVOR {intensity: flavor.intensity}]->(f)
+            )
+            """)
+                .bind(placeId).to("placeId")
+                .bind(id).to("id")
+                .bind(item.getName()).to("name")
+                .bind(item.getCategory()).to("category")
+                .bind(item.getAlcoholPct()).to("alcoholPct")
+                .bind(item.getPrice()).to("price")
+                .bind(imagesOrEmpty(item.getImagePublicIds())).to("images")
+                .bind(flavorRows(item.getFlavors())).to("flavors")
+                .run();
+
+        return id;
     }
 
 }
