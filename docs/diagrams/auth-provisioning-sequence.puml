@@ -1,0 +1,37 @@
+@startuml
+title DrunkGraph - Secuencia de autenticacion y provisionamiento
+
+actor Usuario
+participant "Next.js Web" as Web
+participant "FusionAuth" as FusionAuth
+participant "Spring API" as API
+participant "Spring Security" as Security
+participant "ProvisioningJwtAuthenticationConverter" as Converter
+participant "ProvisionUserUseCase" as UseCase
+participant "Neo4jUserProvisioningAdapter" as Adapter
+database "Neo4j" as Neo4j
+
+Usuario -> Web: Inicia sesion
+Web -> FusionAuth: Redireccion OAuth
+FusionAuth --> Web: JWT / sesion
+
+Usuario -> Web: Ejecuta accion protegida
+Web -> API: Request con Authorization: Bearer JWT
+API -> Security: Validar token
+Security -> FusionAuth: Obtener JWKS si es necesario
+FusionAuth --> Security: Llaves publicas
+Security -> Converter: convert(jwt)
+
+Converter -> UseCase: execute(sub, email, name)
+UseCase -> Adapter: provision(sub, email, name)
+Adapter -> Neo4j: MERGE (u:User {id: sub})\nON CREATE SET alias, email, defaults
+Neo4j --> Adapter: OK
+Adapter --> UseCase: OK
+UseCase --> Converter: OK
+Converter --> Security: JwtAuthenticationToken
+Security --> API: Solicitud autenticada
+API --> Web: Respuesta del endpoint
+Web --> Usuario: Actualiza UI
+
+@enduml
+

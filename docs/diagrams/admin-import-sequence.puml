@@ -1,0 +1,43 @@
+@startuml
+title DrunkGraph - Secuencia para importar bebidas desde admin
+
+actor Administrador
+participant "Next.js Admin" as Web
+participant "Admin Proxy" as Proxy
+participant "Spring Security\n/api/admin/**" as Security
+participant "AdminDrinkHandler" as Handler
+participant "DrinkServiceImpl" as Service
+participant "DrinkRepository" as Repo
+database "Neo4j" as Neo4j
+
+Administrador -> Web: Envia lote de bebidas
+Web -> Proxy: POST /api/admin-proxy/places/{placeId}/drinks/batch
+Proxy -> Security: POST /api/admin/places/{placeId}/drinks/batch\nAuthorization: Bearer JWT
+Security -> Handler: importBatch(placeId, request)
+
+Handler -> Service: importBatch(placeId, request)
+Service -> Repo: placeExists(placeId)
+Repo -> Neo4j: MATCH (p:Place {id: placeId})
+Neo4j --> Repo: true/false
+
+alt lugar no existe
+  Service --> Handler: ResourceNotFoundException
+  Handler --> Proxy: 404
+  Proxy --> Web: Error
+else lugar existe
+  loop por bebida del lote
+    Service -> Repo: createInPlace(placeId, item)
+    Repo -> Neo4j: CREATE (d:Drink)\nCREATE (d)-[:SERVED_AT]->(p)\nMERGE sabores\nCREATE HAS_FLAVOR
+    Neo4j --> Repo: id de bebida
+    Service -> Repo: findById(id)
+    Repo -> Neo4j: MATCH bebida, lugar y sabores
+    Neo4j --> Repo: datos de bebida
+    Repo --> Service: Drink
+  end
+  Service --> Handler: List<Drink>
+  Handler --> Proxy: 201 Created
+  Proxy --> Web: Bebidas creadas
+end
+
+@enduml
+
