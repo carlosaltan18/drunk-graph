@@ -2,7 +2,7 @@
 import type { components } from "@generated/admin-api/schema.d.ts";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { ApiError } from "@/lib/api/error";
+import { throwIfError } from "@/lib/api/error";
 import { adminClientApi } from "@/lib/api/admin-client";
 
 type ApiDrink = components["schemas"]["Drink"];
@@ -54,17 +54,16 @@ async function uploadToCloudinary(
   return json.public_id as string;
 }
 
-function fetchAdminDrinks([, placeId]: AdminDrinksKey): Promise<PagedDrinks> {
-  return adminClientApi
-    .GET("/api/admin/drinks", {
-      params: { query: { placeId: placeId ?? undefined } },
-    })
-    .then((r) => {
-      if (!r.response.ok)
-        throw new ApiError(r.response.status, r.response.statusText);
-      if (!r.data) throw new Error("Empty response from /api/admin/drinks");
-      return r.data;
-    });
+async function fetchAdminDrinks([
+  ,
+  placeId,
+]: AdminDrinksKey): Promise<PagedDrinks> {
+  const r = await adminClientApi.GET("/api/admin/drinks", {
+    params: { query: { placeId: placeId ?? undefined } },
+  });
+  await throwIfError(r.response);
+  if (!r.data) throw new Error("Empty response from /api/admin/drinks");
+  return r.data;
 }
 
 export function useAdminDrinks(
@@ -92,8 +91,7 @@ export function useAdminDrinks(
         params: { path: { id } },
         body: request,
       });
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      if (!res.response.ok) await throwIfError(res.response);
       void mutate();
     } catch (err) {
       void mutate();
@@ -102,17 +100,21 @@ export function useAdminDrinks(
   };
 
   const deleteDrink = async (id: string) => {
-    void mutate({ ...data, elements: elements.filter((d) => d.id !== id) }, { revalidate: false });
+    void mutate(
+      { ...data, elements: elements.filter((d) => d.id !== id) },
+      { revalidate: false },
+    );
     try {
       const res = await adminClientApi.DELETE("/api/admin/drinks/{id}", {
         params: { path: { id } },
       });
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      if (!res.response.ok) await throwIfError(res.response);
       void mutate();
     } catch (err) {
       void mutate();
-      toast.error(err instanceof Error ? err.message : "Failed to delete drink");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete drink",
+      );
     }
   };
 

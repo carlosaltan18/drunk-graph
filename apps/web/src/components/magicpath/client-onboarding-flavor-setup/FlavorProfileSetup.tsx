@@ -118,11 +118,13 @@ export const FlavorProfileSetup = ({
     description: f.description ?? "",
   }));
 
-  const [flavorValues, setFlavorValues] = React.useState<Record<string, number>>(
-    Object.fromEntries(flavors.map((f) => [f.id, initialTastes[f.id] ?? 0])),
-  );
+  const [flavorValues, setFlavorValues] = React.useState<
+    Record<string, number>
+  >(Object.fromEntries(flavors.map((f) => [f.id, initialTastes[f.id] ?? 0])));
   const [maxSpend, setMaxSpend] = React.useState(initialBudget);
-  const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(!initialPrefersAlcohol);
+  const [isNonAlcoholic, setIsNonAlcoholic] = React.useState(
+    !initialPrefersAlcohol,
+  );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleFlavorChange = (id: string, val: number) => {
