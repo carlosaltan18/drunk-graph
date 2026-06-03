@@ -1,17 +1,16 @@
 "use client";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { ApiError } from "@/lib/api/error";
+import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 const KEY = "/api/users/me/tastes";
 
-const fetcher = () =>
-  clientApi.GET("/api/users/me/tastes").then((r) => {
-    if (!r.response.ok)
-      throw new ApiError(r.response.status, r.response.statusText);
-    return r.data ?? {};
-  });
+const fetcher = async () => {
+  const r = await clientApi.GET("/api/users/me/tastes");
+  await throwIfError(r.response);
+  return r.data ?? {};
+};
 
 export function useTastes(fallbackData?: Record<string, number>) {
   const { data, mutate, isLoading } = useSWR<Record<string, number>>(
@@ -26,8 +25,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
       const res = await clientApi.POST("/api/users/me/tastes", {
         body: { flavor, weight },
       });
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      await throwIfError(res.response);
       void mutate();
     } catch (err) {
       void mutate();
@@ -43,8 +41,7 @@ export function useTastes(fallbackData?: Record<string, number>) {
       const res = await clientApi.DELETE("/api/users/me/tastes/{flavor}", {
         params: { path: { flavor } },
       });
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      await throwIfError(res.response);
       void mutate();
     } catch (err) {
       void mutate();

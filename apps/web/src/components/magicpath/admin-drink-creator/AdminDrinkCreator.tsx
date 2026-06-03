@@ -14,7 +14,10 @@ import {
 import Link from "next/link";
 import * as React from "react";
 import { type StagedDrink, useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
-import { DrinkSpecEditor, type EditorDrink } from "@/components/magicpath/admin-venue-list/DrinkSpecEditor";
+import {
+  DrinkSpecEditor,
+  type EditorDrink,
+} from "@/components/magicpath/admin-venue-list/DrinkSpecEditor";
 import { cn } from "@/lib/utils";
 import { BrandButton } from "./BrandButton";
 import { SessionBar } from "./SessionBar";
@@ -105,7 +108,14 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
         category: "Cocktail",
         price: 0,
         alcoholPct: 0,
-        flavors: { sweet: 0, bitter: 0, sour: 0, smoky: 0, citrus: 0, herbal: 0 },
+        flavors: {
+          sweet: 0,
+          bitter: 0,
+          sour: 0,
+          smoky: 0,
+          citrus: 0,
+          herbal: 0,
+        },
       },
     ]);
     setImages((prev) => prev.filter((img) => !img.isSelected));
@@ -125,8 +135,12 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
         ...(updates.name !== undefined && { name: updates.name }),
         ...(updates.category !== undefined && { category: updates.category }),
         ...(updates.price !== undefined && { price: updates.price }),
-        ...(updates.alcoholPercent !== undefined && { alcoholPct: updates.alcoholPercent }),
-        ...(updates.flavors !== undefined && { flavors: updates.flavors as unknown as Record<string, number> }),
+        ...(updates.alcoholPercent !== undefined && {
+          alcoholPct: updates.alcoholPercent,
+        }),
+        ...(updates.flavors !== undefined && {
+          flavors: updates.flavors as unknown as Record<string, number>,
+        }),
       };
       return next;
     });
@@ -172,7 +186,8 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
             const next = [...prev];
             const drink = next[index];
             const urlToRevoke = drink.previewUrls[imageIndex];
-            if (urlToRevoke?.startsWith("blob:")) URL.revokeObjectURL(urlToRevoke);
+            if (urlToRevoke?.startsWith("blob:"))
+              URL.revokeObjectURL(urlToRevoke);
             next[index] = {
               ...drink,
               files: drink.files.filter((_, i) => i !== imageIndex),
@@ -291,7 +306,11 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       key={img.id}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.8,
+                        transition: { duration: 0.2 },
+                      }}
                       className={cn(
                         "group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
                         img.isSelected
@@ -402,7 +421,11 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       key={drink.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                      exit={{
+                        opacity: 0,
+                        x: 20,
+                        transition: { duration: 0.15 },
+                      }}
                       className="group bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between hover:border-zinc-700 transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -412,7 +435,11 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                               key={idx}
                               className="w-10 h-10 rounded border-2 border-zinc-900 overflow-hidden bg-zinc-800"
                             >
-                              <img src={url} alt="" className="w-full h-full object-cover" />
+                              <img
+                                src={url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                           ))}
                           {drink.previewUrls.length > 3 && (
@@ -426,9 +453,13 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                             <input
                               autoFocus
                               value={drink.name}
-                              onChange={(e) => renameDrink(drink.id, e.target.value)}
+                              onChange={(e) =>
+                                renameDrink(drink.id, e.target.value)
+                              }
                               onBlur={() => setEditingId(null)}
-                              onKeyDown={(e) => e.key === "Enter" && setEditingId(null)}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && setEditingId(null)
+                              }
                               className="w-full bg-zinc-800 border border-amber-400/50 rounded px-2 py-0.5 text-xs font-black uppercase tracking-tight text-white outline-none"
                             />
                           ) : (
