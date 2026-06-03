@@ -129,7 +129,7 @@ export const DrunkGraphHistory = ({
               <button
                 type="button"
                 className={cn(
-                  "[all:unset] absolute inset-0 right-0 flex items-center justify-end pr-6 bg-red-600 rounded-xl transition-opacity duration-200",
+                  "absolute inset-0 right-0 flex items-center justify-end pr-6 bg-red-600 rounded-xl transition-opacity duration-200",
                   swipedId === drink.id
                     ? "opacity-100"
                     : "opacity-0 pointer-events-none",
