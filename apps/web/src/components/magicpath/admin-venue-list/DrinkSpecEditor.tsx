@@ -628,7 +628,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                 if (!uploading) stageFiles(e.dataTransfer.files);
               }}
               className={cn(
-                "all-unset relative w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden",
+                "relative w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden bg-transparent p-0 text-inherit",
                 stagedFiles.length > 0 ? "py-6" : "py-16",
                 uploading
                   ? "opacity-50 cursor-not-allowed pointer-events-none"

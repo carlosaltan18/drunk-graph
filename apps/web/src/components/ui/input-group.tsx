@@ -53,7 +53,7 @@ function InputGroupAddon({
       data-slot="input-group-addon"
       data-align={align}
       className={cn(
-        "[all:unset]",
+        "border-0 bg-transparent p-0 text-inherit",
         inputGroupAddonVariants({ align }),
         className,
       )}
