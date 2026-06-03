@@ -24,8 +24,8 @@ public class RecommendationRepository {
                 MATCH (u:User {id: $userId})-[like:LIKES]->(f:Flavor)<-[hf:HAS_FLAVOR]-(d:Drink {id: $drinkId})
                 WHERE (u.prefers_alcohol = true OR d.alcohol_pct = 0)
                 WITH u, d,
-                     sum(like.score * hf.intensity) AS weightedBonus,
-                     count(f) AS intersection
+                     avg(like.score * hf.intensity) AS weightedBonus,
+                     count(DISTINCT f) AS intersection
                 WITH u, d, weightedBonus, intersection,
                      size([(u)-[:LIKES]->(uf) | uf]) AS userFlavorCount,
                      size([(d)-[:HAS_FLAVOR]->(df) | df]) AS drinkFlavorCount
@@ -34,7 +34,7 @@ public class RecommendationRepository {
                 WITH d,
                      CASE WHEN unionSize = 0 THEN 0.0
                           ELSE (toFloat(intersection) / unionSize) * 0.5
-                             + (weightedBonus / unionSize) * 0.5
+                             + coalesce(weightedBonus, 0.0) * 0.5
                      END AS scoreFlavor,
                      CASE WHEN d.price > u.budget_max THEN -0.30
                           ELSE (1.0 - d.price / u.budget_max) * 0.20
@@ -75,8 +75,8 @@ public class RecommendationRepository {
                 WHERE NOT (u)-[:CONSUMED]->(d)
                   AND (u.prefers_alcohol = true OR d.alcohol_pct = 0)
                 WITH u, d,
-                     sum(like.score * hf.intensity) AS weightedBonus,
-                     count(f) AS intersection
+                     avg(like.score * hf.intensity) AS weightedBonus,
+                     count(DISTINCT f) AS intersection
                 WITH u, d, weightedBonus, intersection,
                      size([(u)-[:LIKES]->(uf) | uf]) AS userFlavorCount,
                      size([(d)-[:HAS_FLAVOR]->(df) | df]) AS drinkFlavorCount
@@ -85,7 +85,7 @@ public class RecommendationRepository {
                 WITH d,
                      CASE WHEN unionSize = 0 THEN 0.0
                           ELSE (toFloat(intersection) / unionSize) * 0.5
-                             + (weightedBonus / unionSize) * 0.5
+                             + coalesce(weightedBonus, 0.0) * 0.5
                      END AS scoreFlavor,
                      CASE WHEN d.price > u.budget_max THEN -0.30
                           ELSE (1.0 - d.price / u.budget_max) * 0.20
