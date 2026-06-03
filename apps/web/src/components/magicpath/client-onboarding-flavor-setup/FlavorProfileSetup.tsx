@@ -110,7 +110,7 @@ export const FlavorProfileSetup = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const backUrl = searchParams.get("back");
-  const { addTaste } = useTastes();
+  const { addTaste, removeTaste } = useTastes();
   const { updatePreferences } = usePreferences();
   const flavors: Flavor[] = apiFlavors.map((f) => ({
     id: f.name ?? "",
@@ -137,9 +137,10 @@ export const FlavorProfileSetup = ({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const activeTastes = Object.entries(flavorValues).filter(([, v]) => v > 0);
     await Promise.all([
-      ...activeTastes.map(([flavor, weight]) => addTaste(flavor, weight)),
+      ...Object.entries(flavorValues).map(([flavor, weight]) =>
+        weight > 0 ? addTaste(flavor, weight) : removeTaste(flavor),
+      ),
       updatePreferences({
         budgetMax: maxSpend || undefined,
         prefersAlcohol: !isNonAlcoholic,
