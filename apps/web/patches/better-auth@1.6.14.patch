@@ -1,0 +1,13 @@
+diff --git a/dist/api/routes/account.mjs b/dist/api/routes/account.mjs
+index ae42e6933d1482066fa53c838f811b454eae3415..a68850819c0b1082ffa74f9d4b9a44f71cb00e06 100644
+--- a/dist/api/routes/account.mjs
++++ b/dist/api/routes/account.mjs
+@@ -269,7 +269,7 @@ async function getValidAccessToken(ctx, { resolvedUserId, providerId, accountId,
+ 				idToken: newTokens?.idToken || account.idToken
+ 			};
+ 			let updatedAccount = null;
+-			if (account.id) updatedAccount = await ctx.context.internalAdapter.updateAccount(account.id, updatedData);
++			if (account.id && ctx.context.options.database) updatedAccount = await ctx.context.internalAdapter.updateAccount(account.id, updatedData);
+ 			if (ctx.context.options.account?.storeAccountCookie) await setAccountCookie(ctx, {
+ 				...account,
+ 				...updatedAccount ?? updatedData
