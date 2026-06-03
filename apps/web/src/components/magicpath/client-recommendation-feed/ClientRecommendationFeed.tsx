@@ -70,6 +70,9 @@ function getCategoryIcon(category: DrinkRecommendation["category"]) {
       return null;
   }
 }
+function toPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value * 100)));
+}
 
 // --- Sub-components ---
 const DrinkCard = ({ drink }: { drink: DrinkRecommendation }) => (
@@ -126,7 +129,7 @@ export const ClientRecommendationFeed = ({
     id: r.drinkId ?? "",
     name: r.drink ?? "Unknown",
     category: (r.category ?? "cocktail") as DrinkRecommendation["category"],
-    scoreFinal: Math.round((r.scoreFinal ?? 0) * 100),
+    scoreFinal: toPercent(r.scoreFinal ?? 0),
     price: `Q ${r.price?.toFixed(0) ?? "—"}`,
     place: "",
     imageUrl: r.imageUrls?.[0] ?? null,

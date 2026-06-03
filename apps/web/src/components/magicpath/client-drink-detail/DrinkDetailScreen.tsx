@@ -105,6 +105,9 @@ const FlavorIntensityDots = ({ intensity }: { intensity: number }) => {
     </div>
   );
 };
+function toPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value * 100)));
+}
 export const DrinkDetailScreen = ({
   drink,
   fallbackRecommendation,
@@ -147,7 +150,11 @@ export const DrinkDetailScreen = ({
     <main className="flex flex-col w-full min-h-screen bg-zinc-950 text-white font-sans selection:bg-orange-500/30 overflow-x-hidden pb-24">
       {/* Top Image Section */}
       <div className="relative">
-        <ImageCarousel images={(drink?.images ?? []).map((img) => img.url ?? "").filter(Boolean)} />
+        <ImageCarousel
+          images={(drink?.images ?? [])
+            .map((img) => img.url ?? "")
+            .filter(Boolean)}
+        />
         <button
           onClick={() => router.back()}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform"
@@ -231,7 +238,7 @@ export const DrinkDetailScreen = ({
                 }}
                 className="text-xl font-black text-orange-500 italic"
               >
-                {Math.round(scoreFinal * 100)}% MATCH
+                {toPercent(scoreFinal)}% MATCH
               </motion.p>
             </div>
 
@@ -242,7 +249,7 @@ export const DrinkDetailScreen = ({
                     Flavor Match
                   </span>
                   <span className="text-[10px] font-bold text-orange-500">
-                    {Math.round(scoreFlavor * 100)}%
+                    {toPercent(scoreFlavor)}%
                   </span>
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -251,7 +258,7 @@ export const DrinkDetailScreen = ({
                       width: 0,
                     }}
                     animate={{
-                      width: `${scoreFlavor * 100}%`,
+                      width: `${toPercent(scoreFlavor)}%`,
                     }}
                     transition={{
                       duration: 1,
@@ -267,7 +274,7 @@ export const DrinkDetailScreen = ({
                     Price Fit
                   </span>
                   <span className="text-[10px] font-bold text-green-500">
-                    {Math.round(scorePrice * 100)}%
+                    {toPercent(scorePrice)}%
                   </span>
                 </div>
                 <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -276,7 +283,7 @@ export const DrinkDetailScreen = ({
                       width: 0,
                     }}
                     animate={{
-                      width: `${scorePrice * 100}%`,
+                      width: `${toPercent(scorePrice)}%`,
                     }}
                     transition={{
                       duration: 1,
