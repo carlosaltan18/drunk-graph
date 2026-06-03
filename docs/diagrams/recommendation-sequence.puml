@@ -1,0 +1,48 @@
+@startuml
+title DrunkGraph - Secuencia para obtener recomendaciones
+
+actor Usuario
+participant "Next.js Web" as Web
+participant "API Proxy" as Proxy
+participant "Spring Security" as Security
+participant "ProvisioningJwtAuthenticationConverter" as JwtConverter
+participant "ProvisionUserUseCase" as Provision
+participant "RecommendationHandler" as Handler
+participant "RecommendationServiceImpl" as Service
+participant "RecommendationRepository" as Repo
+database "Neo4j" as Neo4j
+participant "ImageResolver" as Images
+cloud "Cloudinary" as Cloudinary
+
+Usuario -> Web: Abre feed de recomendaciones
+Web -> Proxy: GET /api/proxy/users/me/recommendations?limit=10
+Proxy -> Security: GET /api/users/me/recommendations?limit=10\nAuthorization: Bearer JWT
+
+Security -> JwtConverter: convert(jwt)
+JwtConverter -> Provision: execute(sub, email, name)
+Provision -> Neo4j: MERGE (u:User {id: sub})
+Neo4j --> Provision: Usuario creado o existente
+JwtConverter --> Security: JwtAuthenticationToken
+
+Security -> Handler: recommend(jwt, limit)
+Handler -> Service: recomend(jwt.subject, limit)
+Service -> Repo: findTopN(userId, topN)
+
+Repo -> Neo4j: MATCH usuario, sabores y bebidas candidatas\ncalcular scoreFlavor, scorePrice, scoreFinal
+Neo4j --> Repo: Filas con drinkId, score e imagenes
+
+loop por recomendacion
+  Repo -> Images: resolve(publicIds)
+  Images -> Cloudinary: generar URL segura
+  Cloudinary --> Images: URL publica
+  Images --> Repo: imageUrls
+end
+
+Repo --> Service: List<Recommendation>
+Service --> Handler: List<Recommendation>
+Handler --> Proxy: JSON 200
+Proxy --> Web: JSON 200
+Web --> Usuario: Muestra recomendaciones ordenadas
+
+@enduml
+
