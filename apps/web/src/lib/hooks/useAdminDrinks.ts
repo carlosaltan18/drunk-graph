@@ -101,6 +101,21 @@ export function useAdminDrinks(
     }
   };
 
+  const deleteDrink = async (id: string) => {
+    void mutate({ ...data, elements: elements.filter((d) => d.id !== id) }, { revalidate: false });
+    try {
+      const res = await adminClientApi.DELETE("/api/admin/drinks/{id}", {
+        params: { path: { id } },
+      });
+      if (!res.response.ok)
+        throw new ApiError(res.response.status, res.response.statusText);
+      void mutate();
+    } catch (err) {
+      void mutate();
+      toast.error(err instanceof Error ? err.message : "Failed to delete drink");
+    }
+  };
+
   const importBatch = async (
     stagedDrinks: StagedDrink[],
     onProgress: (id: string, status: StagedDrink["status"]) => void,
@@ -161,5 +176,5 @@ export function useAdminDrinks(
     }
   };
 
-  return { drinks: elements, isLoading, updateDrink, importBatch };
+  return { drinks: elements, isLoading, updateDrink, deleteDrink, importBatch };
 }
