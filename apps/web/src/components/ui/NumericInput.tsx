@@ -1,7 +1,11 @@
 "use client";
 import * as React from "react";
 
-interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> {
+interface Props
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "type" | "value" | "onChange"
+  > {
   value: number;
   onChange: (value: number) => void;
   min?: number;

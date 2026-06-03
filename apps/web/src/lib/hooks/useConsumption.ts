@@ -3,7 +3,7 @@ import type { components } from "@generated/api/schema.d.ts";
 import React from "react";
 import { toast } from "sonner";
 import useSWR, { mutate as globalMutate } from "swr";
-import { ApiError } from "@/lib/api/error";
+import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
@@ -12,16 +12,14 @@ type PagedConsumedDrink = components["schemas"]["PagedResultConsumedDrink"];
 const KEY = "/api/users/me/consumption";
 const STATS_KEY = "/api/users/me/stats";
 
-const fetcher = (): Promise<PagedConsumedDrink> =>
-  clientApi
-    .GET("/api/users/me/consumption", { params: { query: { limit: 100 } } })
-    .then((r) => {
-      if (!r.response.ok)
-        throw new ApiError(r.response.status, r.response.statusText);
-      if (!r.data)
-        throw new Error("Empty response from /api/users/me/consumption");
-      return r.data;
-    });
+const fetcher = async (): Promise<PagedConsumedDrink> => {
+  const r = await clientApi.GET("/api/users/me/consumption", {
+    params: { query: { limit: 100 } },
+  });
+  await throwIfError(r.response);
+  if (!r.data) throw new Error("Empty response from /api/users/me/consumption");
+  return r.data;
+};
 
 export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally stable — SSR fallback only needs to be built once
@@ -54,8 +52,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
       const res = await clientApi.POST("/api/users/me/consumption", {
         body: { drinkId, rating },
       });
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      await throwIfError(res.response);
       void mutate();
       void globalMutate(STATS_KEY);
     } catch (err) {
@@ -75,8 +72,7 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
         "/api/users/me/consumption/{drinkId}",
         { params: { path: { drinkId } } },
       );
-      if (!res.response.ok)
-        throw new ApiError(res.response.status, res.response.statusText);
+      await throwIfError(res.response);
       void mutate();
     } catch (err) {
       void mutate();

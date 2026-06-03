@@ -3,11 +3,12 @@ import { createServerApi } from "@/lib/api/server";
 
 export default async function OnboardingPage() {
   const api = await createServerApi();
-  const [{ data: flavors }, { data: tastes }, { data: user }] = await Promise.all([
-    api.GET("/api/flavors"),
-    api.GET("/api/users/me/tastes"),
-    api.GET("/api/users/me"),
-  ]);
+  const [{ data: flavors }, { data: tastes }, { data: user }] =
+    await Promise.all([
+      api.GET("/api/flavors"),
+      api.GET("/api/users/me/tastes"),
+      api.GET("/api/users/me"),
+    ]);
 
   return (
     <FlavorProfileSetup

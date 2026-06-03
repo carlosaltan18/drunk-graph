@@ -2,7 +2,7 @@
 import type { components } from "@generated/api/schema.d.ts";
 import useSWR from "swr";
 import { clientApi } from "@/lib/api/client";
-import { ApiError } from "@/lib/api/error";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiRecommendation = components["schemas"]["Recommendation"];
 
@@ -16,8 +16,7 @@ async function fetchRecommendation([
     params: { path: { drinkId } },
   });
   if (r.response.status === 404) return null;
-  if (!r.response.ok)
-    throw new ApiError(r.response.status, r.response.statusText);
+  if (!r.response.ok) await throwIfError(r.response);
   if (!r.data)
     throw new Error(
       "Empty response from /api/users/me/recommendations/{drinkId}",

@@ -35,7 +35,7 @@ function mapProfileToUser(role: "user" | "admin") {
     const name =
       typeof profile.name === "string"
         ? profile.name
-        : email?.split("@")[0] ?? String(profile.sub ?? "");
+        : (email?.split("@")[0] ?? String(profile.sub ?? ""));
     return { name, email, image, role };
   };
 }

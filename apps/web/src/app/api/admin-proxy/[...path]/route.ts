@@ -18,7 +18,10 @@ async function handler(
   const accessToken = tokenData?.accessToken;
 
   if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized", reason: "session_dead" },
+      { status: 401 },
+    );
   }
 
   const { path } = await params;
@@ -42,7 +45,6 @@ async function handler(
 
   const upstreamContentType = upstream.headers.get("content-type") ?? "";
   const text = await upstream.text();
-
 
   if (upstreamContentType.includes("application/json")) {
     const data = text ? JSON.parse(text) : null;

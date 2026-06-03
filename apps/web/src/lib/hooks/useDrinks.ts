@@ -1,7 +1,7 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useSWRInfinite from "swr/infinite";
-import { ApiError } from "@/lib/api/error";
+import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
 
 type ApiDrink = components["schemas"]["Drink"];
@@ -28,16 +28,14 @@ async function fetchPage([
         query: { search, page, limit: PAGE_SIZE },
       },
     });
-    if (!r.response.ok)
-      throw new ApiError(r.response.status, r.response.statusText);
+    if (!r.response.ok) await throwIfError(r.response);
     if (!r.data) throw new Error("Empty response from /api/drinks/category");
     return r.data;
   }
   const r = await clientApi.GET("/api/drinks", {
     params: { query: { search, page, limit: PAGE_SIZE } },
   });
-  if (!r.response.ok)
-    throw new ApiError(r.response.status, r.response.statusText);
+  if (!r.response.ok) await throwIfError(r.response);
   if (!r.data) throw new Error("Empty response from /api/drinks");
   return r.data;
 }
