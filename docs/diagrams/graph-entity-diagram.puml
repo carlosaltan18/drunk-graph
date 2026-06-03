@@ -1,0 +1,82 @@
+@startuml
+title DrunkGraph - Diagrama de entidades del grafo Neo4j
+
+skinparam classAttributeIconSize 0
+hide methods
+
+class User <<Node>> {
+  id: String
+  alias: String
+  email: String
+  age: int
+  budget_max: double
+  prefers_alcohol: boolean
+}
+
+class Drink <<Node>> {
+  id: String
+  name: String
+  category: String
+  alcohol_pct: double
+  price: double
+  images: List<String>
+}
+
+class Flavor <<Node>> {
+  name: String
+  description: String
+}
+
+class Place <<Node>> {
+  id: String
+  name: String
+  location: String
+}
+
+class LIKES <<Relationship>> {
+  score: double
+}
+
+class HAS_FLAVOR <<Relationship>> {
+  intensity: double
+}
+
+class CONSUMED <<Relationship>> {
+  rating: int
+  date: LocalDate
+}
+
+class SERVED_AT <<Relationship>>
+
+User "1" --> "0..*" LIKES
+LIKES "0..*" --> "1" Flavor
+
+Drink "1" --> "0..*" HAS_FLAVOR
+HAS_FLAVOR "0..*" --> "1" Flavor
+
+User "1" --> "0..*" CONSUMED
+CONSUMED "0..*" --> "1" Drink
+
+Drink "0..*" --> "1" SERVED_AT
+SERVED_AT "0..*" --> "1" Place
+
+note right of LIKES
+score representa cuanto le gusta
+un sabor al usuario.
+Rango esperado: 0.0 a 1.0.
+end note
+
+note right of HAS_FLAVOR
+intensity representa que tan fuerte
+esta presente un sabor en la bebida.
+Rango esperado: 0.0 a 1.0.
+end note
+
+note bottom of Drink
+Recommendation no se persiste como nodo.
+Es un modelo de lectura calculado
+desde User, Drink y Flavor.
+end note
+
+@enduml
+

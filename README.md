@@ -1,287 +1,496 @@
 # DrunkGraph
 
-A graph-powered drink recommendation platform. Users define their flavor preferences and the system recommends drinks based on a weighted Jaccard similarity score computed at query time directly on the graph.
+DrunkGraph es una plataforma web de recomendaciones de bebidas basada en grafos. El usuario registra sus gustos, presupuesto y preferencia por alcohol; el backend consulta Neo4j y calcula recomendaciones personalizadas en tiempo real usando relaciones entre usuarios, sabores, bebidas y lugares.
 
-## Architecture Overview
+## Tabla de Contenido
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                        Client                           │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│                   Next.js (apps/web)                    │
-│  - BetterAuth session management (user + admin)         │
-│  - /api/proxy/[...path] → forwards to Spring API        │
-│    with FusionAuth JWT as Bearer token                  │
-└────────────────────────┬────────────────────────────────┘
-                         │ Bearer JWT
-┌────────────────────────▼────────────────────────────────┐
-│         Spring Boot API (apps/api)  OR  Mock API        │
-│         (apps/mock-api)                                 │
-│  - Spring: validates JWT, vertical slice, Neo4j         │
-│  - Mock: Express + Faker, same OpenAPI contract         │
-└──────┬─────────────────┬──────────────────┬─────────────┘
-       │                 │                  │
-┌──────▼──────┐  ┌───────▼──────┐  ┌───────▼──────┐
-│   Neo4j     │  │  FusionAuth  │  │    MinIO     │
-│ (graph DB)  │  │   (auth)     │  │  (storage)   │
-└─────────────┘  └──────────────┘  └──────────────┘
-```
+- [Arquitectura](#arquitectura)
+- [Stack](#stack)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Requisitos](#requisitos)
+- [Configuracion Local](#configuracion-local)
+- [Comandos](#comandos)
+- [Modelo de Grafo](#modelo-de-grafo)
+- [Motor de Recomendaciones](#motor-de-recomendaciones)
+- [Endpoints Principales](#endpoints-principales)
+- [Importar Data a Neo4j](#importar-data-a-neo4j)
+- [Deploy del Backend en Render](#deploy-del-backend-en-render)
+- [Documentacion Extra](#documentacion-extra)
+- [Troubleshooting](#troubleshooting)
 
-## Apps
+## Arquitectura
 
-### `apps/web` — Next.js Frontend
+```text
+Usuario
+  |
+  v
+Next.js Web (apps/web)
+  |  Browser requests via /api/proxy and /api/admin-proxy
+  v
+Spring Boot API (apps/api)
+  |  JWT validation with FusionAuth JWKS
+  v
+Neo4j Graph Database
 
-The user-facing app and admin backoffice, served from a single Next.js instance.
-
-- **User app** (`/dashboard`) — recommendation feed, drink browser, drink detail, consumption history, flavor profile setup, user profile
-- **Admin backoffice** (`/admin`) — venue management, batch drink uploader, drink editor
-- **Auth** — two independent BetterAuth instances with isolated cookie namespaces (`ba-user.*` / `ba-admin.*`). Both can be active simultaneously in the same browser
-- **API access** — browser calls go through `/api/proxy` (user) or `/api/admin-proxy` (admin), which attach the FusionAuth JWT. Server components call Spring directly via `createServerApi()` / `createAdminApi()`
-- **TypeScript API client** — fully typed via `openapi-fetch`, generated from `apps/api/openapi/client.json` and `admin.json`. Run `just generate-api` to regenerate after spec changes
-
-See [`apps/web/README.md`](apps/web/README.md) for full detail.
-
----
-
-### `apps/api` — Spring Boot API
-
-The backend. Validates FusionAuth JWTs (RS256 via JWKS), queries Neo4j, and stores drink images in MinIO.
-
-- **Two security filter chains** — one per tenant (user vs admin), each with its own JWKS URI. A user JWT cannot reach admin endpoints and vice versa
-- **Vertical slice architecture** — each feature lives in `modules/<feature>/use_cases/{commands,queries}/<use_case>/`. Controllers are thin HTTP adapters
-- **Neo4j** — mutations via Spring Data Neo4j repositories; reads via `Neo4jClient` with raw Cypher returning shaped read models (never reusing the `@Node` entity)
-- **Recommendation algorithm** — Jaccard similarity + weighted flavor bonus, computed at query time directly on the graph. No pre-computation
-- **Image storage** — Cloudinary for uploads (signed directly from the browser); image URLs stored in Neo4j as public URLs
-- **User provisioning** — users are lazily created in Neo4j on first authenticated request via a custom `JwtAuthenticationConverter`. An in-memory `ConcurrentHashMap` cache prevents repeat round-trips
-
----
-
-### `apps/mock-api` — Mock API
-
-A lightweight Express server that implements the same OpenAPI contract as the Spring API using `@faker-js/faker`. Runs on port 8080 — same as Spring — so the web app switches between them just by changing which process is running.
-
-**When to use it:**
-- Frontend development without needing Java / Neo4j / FusionAuth running
-- Testing UI with predictable seeded data (`faker.seed(1)` — responses are stable across restarts)
-- Working on endpoints the Spring API hasn't implemented yet
-
-**How it works:**
-- Reads `apps/api/openapi/client.json` and `admin.json` at startup
-- Maps each `operationId` to a handler function that returns Faker-generated data
-- Any `operationId` without a handler returns `501` with a warning in the console
-- Pagination (`page` / `limit` query params) is respected
-
-```bash
-just mock-api   # start mock API on :8080
-just web        # start Next.js on :3000 (points to :8080 by default)
+Servicios auxiliares:
+- FusionAuth: autenticacion OAuth/JWT
+- Postgres: base interna de FusionAuth
+- Cloudinary: imagenes de bebidas
+- MinIO: servicio local incluido en compose para compatibilidad/experimentos
 ```
 
-No auth is enforced by the mock — all endpoints return 200 regardless of the `Authorization` header.
+El frontend nunca llama directamente al backend desde el navegador. Las peticiones pasan por proxies de Next.js que adjuntan el JWT de la sesion actual.
 
-## Graph Model
+## Stack
 
-```
-(User)-[:LIKES {score: float}]->(Flavor)<-[:HAS_FLAVOR {intensity: float}]-(Drink)
-```
+| Capa | Tecnologia |
+|---|---|
+| Frontend | Next.js 16, React 19, TypeScript, SWR, BetterAuth, Tailwind CSS |
+| Backend | Java 21, Spring Boot 4.0.7-SNAPSHOT, Spring Web MVC, Spring Security |
+| Base de datos | Neo4j |
+| Auth | FusionAuth, OAuth2 Resource Server, JWT con JWKS |
+| Imagenes | Cloudinary |
+| Mock API | Express 5, Faker |
+| Dev tooling | pnpm, Maven Wrapper, Docker Compose, just |
+| Deploy backend | Docker, Render |
 
-- `score` — how much the user likes that flavor (0.0–1.0)
-- `intensity` — how strong that flavor is in the drink (0.0–1.0)
+## Estructura del Proyecto
 
-### Recommendation Score
-
-```
-Score = (Jaccard_base × 0.5) + (Weighted_bonus × 0.5)
-```
-
-- **Jaccard base** — flavor set overlap: `|A ∩ B| / |A ∪ B|`
-- **Weighted bonus** — weighted sum: `avg(score × intensity)` over matched flavors
-
-Recommendations are computed at runtime via a single Cypher query — no pre-computation or message broker needed at this scale.
-
-## Spring API Structure
-
-The API follows **vertical slice architecture** grouped by bounded context, with explicit separation between commands (mutations) and queries (reads).
-
-```
-src/main/java/com/uvg/drunkgraph/
-├── modules/
-│   ├── drink/
-│   │   ├── model/
-│   │   │   └── Drink.java                         # @Node entity
-│   │   ├── repository/
-│   │   │   └── DrinkRepository.java               # mutations only
-│   │   └── use_cases/
-│   │       ├── commands/
-│   │       │   └── mark_as_drinked/
-│   │       │       ├── MarkAsDrinkedInput.java
-│   │       │       ├── MarkAsDrinkedOutput.java
-│   │       │       └── MarkAsDrinkedUseCase.java
-│   │       └── queries/
-│   │           └── get_by_id/
-│   │               ├── GetDrinkByIdInput.java
-│   │               ├── GetDrinkByIdOutput.java
-│   │               ├── GetDrinkByIdQuery.java      # Neo4jClient Cypher
-│   │               └── GetDrinkByIdUseCase.java
-│   ├── user/
-│   │   └── ...same structure...
-│   └── recommendation/
-│       └── use_cases/
-│           └── queries/
-│               └── get_recommendations/
-│                   ├── GetRecommendationsInput.java
-│                   ├── GetRecommendationsOutput.java
-│                   ├── RecommendationQuery.java    # scoring algorithm lives here
-│                   └── GetRecommendationsUseCase.java
-└── infra/
-    ├── http/
-    │   ├── DrinkController.java
-    │   ├── UserController.java
-    │   └── RecommendationController.java
-    ├── storage/
-    │   └── StorageService.java                    # resolves MinIO keys → URLs
-    └── security/
-        └── SecurityConfig.java                    # JWT / JWKS config
+```text
+.
+├── apps/
+│   ├── api/                 # Backend Spring Boot
+│   │   ├── src/main/java/   # Codigo Java
+│   │   ├── src/main/resources/
+│   │   └── import/          # Scripts Cypher para Neo4j
+│   ├── web/                 # Frontend Next.js
+│   └── mock-api/            # API falsa para desarrollo frontend
+├── docs/                    # Documentacion tecnica y diagramas
+├── fusionauth/              # Kickstart y templates de FusionAuth
+├── minio-init/              # Inicializacion local de MinIO
+├── compose.yaml             # Infra local
+├── Dockerfile               # Imagen del backend para Render
+├── justfile                 # Comandos del proyecto
+├── .env.example             # Variables del root
+└── pnpm-workspace.yaml
 ```
 
-### Key conventions
+## Requisitos
 
-- **Repository** — Spring Data Neo4j, used only for mutations. Returns `@Node` entities.
-- **Query** — `Neo4jClient` with raw Cypher, returns read models shaped for the use case. Never reuses the entity.
-- **Use case** — orchestrates one query or command, resolves infrastructure concerns (e.g. storage URLs), returns the HTTP output record.
-- **Controller** — thin HTTP adapter. Extracts request data, calls the use case, returns the response. No business logic.
-- **Image keys** — stored as relative keys in Neo4j (e.g. `drinks/mojito.jpg`). `StorageService` resolves them to full URLs at request time.
-- **Recommendation module** — has no repository (read-only). Uses `Neo4jClient` directly with the scoring Cypher query.
+Instala lo siguiente antes de levantar el proyecto:
 
-## Auth Flow
+| Software | Version recomendada |
+|---|---:|
+| Java JDK | 21 |
+| Docker Desktop | Reciente |
+| Node.js | 20 o superior |
+| pnpm | 9 o superior |
+| just | Reciente |
+| Git | Reciente |
 
-```
-User → FusionAuth (Google / GitHub OAuth) → BetterAuth session (Next.js)
-     → /api/proxy/* → Spring API (JWT validated via JWKS)
-```
+En Windows, varios comandos de `just` usan sintaxis `sh`. Lo mas comodo es ejecutar esos comandos desde Git Bash o WSL. Si solo tienes PowerShell, puedes copiar los archivos de entorno manualmente y usar el comando mostrado en [levantar solo el backend](#levantar-solo-el-backend).
 
-- FusionAuth issues JWTs signed with RS256
-- Spring validates via `/.well-known/jwks.json` — no shared secret
-- Anonymous users can pass flavor preferences as a request payload — same recommendation logic, no account required
+## Configuracion Local
 
-## Monorepo Structure
+### 1. Clonar el repositorio
 
-```
-apps/
-  web/                    # Next.js frontend (user app + admin backoffice)
-  api/                    # Spring Boot API
-    openapi/              # OpenAPI specs (client.json, admin.json) — source of truth for types
-    import/               # Cypher seed files (run with `just seed <file>`)
-  mock-api/               # Express mock server (same OpenAPI contract, Faker data)
-fusionauth/
-  kickstart.json          # bootstraps FusionAuth on first run
-  templates/
-    oauth2Authorize.ftl         # custom user login page
-    oauth2AuthorizeBackoffice.ftl  # custom admin login page
-docs/                     # architecture documentation
-compose.yaml              # Neo4j + FusionAuth + Postgres + MinIO
-.env.example              # all required environment variables
-```
-
-## Local Development
-
-### Prerequisites
-
-- Docker
-- Java 21
-- Node.js 20+ / pnpm
-- [just](https://github.com/casey/just#installation) — task runner
-  - macOS: `brew install just`
-  - Windows: `winget install Casey.Just` or `scoop install just`
-  - Linux: `cargo install just` or see [prebuilt binaries](https://github.com/casey/just/releases)
-
-### Getting started
-
-Follow these steps in order. Do not skip any.
-
-**Step 1 — Clone the repo**
 ```bash
 git clone https://github.com/carlosaltan18/drunk-graph.git
 cd drunk-graph
 ```
 
-**Step 2 — Copy environment files**
+### 2. Crear archivos de entorno
+
 ```bash
 just setup
 ```
-This creates `.env` and `apps/web/.env.local` from their example files and syncs shared values automatically.
 
-**Step 3 — Fill in OAuth credentials**
+Esto crea:
 
-Open `.env` in a text editor and fill in these four values (get them from Google Cloud Console and GitHub Developer Settings):
+```text
+.env
+apps/web/.env.local
 ```
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
+
+Alternativa en PowerShell si no usas `just setup`:
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item apps/web/.env.local.example apps/web/.env.local
 ```
-Everything else in `.env` already has working defaults — do not change them.
 
-**Step 4 — Start the infrastructure**
+### 3. Completar secretos
 
-Make sure Docker is running, then:
+Edita `.env` y completa los valores reales que apliquen:
+
+```env
+GOOGLE_CLIENT_ID=<tu_google_client_id>
+GOOGLE_CLIENT_SECRET=<tu_google_client_secret>
+GITHUB_CLIENT_ID=<tu_github_client_id>
+GITHUB_CLIENT_SECRET=<tu_github_client_secret>
+
+CLOUDINARY_CLOUD_NAME=<tu_cloud_name>
+CLOUDINARY_API_KEY=<tu_api_key>
+CLOUDINARY_API_SECRET=<tu_api_secret>
+```
+
+Para desarrollo local con Docker puedes dejar:
+
+```env
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=password123!
+FUSIONAUTH_ISSUER_URI=http://localhost:9011
+FUSIONAUTH_JWKS_URI=http://localhost:9011/.well-known/jwks.json
+SPRING_PROFILES_ACTIVE=dev
+```
+
+Para Neo4j AuraDB usa:
+
+```env
+NEO4J_URI=neo4j+s://<database-id>.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=<password-real-de-aura>
+```
+
+### 4. Levantar infraestructura
+
 ```bash
 just infra-up
 ```
-This starts Neo4j, FusionAuth, and MinIO in the background. Wait ~30 seconds for FusionAuth to finish bootstrapping before starting the app.
 
-**Step 5 — Install Node.js dependencies**
+Esto levanta Neo4j, FusionAuth, Postgres y MinIO. Espera alrededor de 30 segundos para que FusionAuth termine el kickstart.
+
+### 5. Instalar dependencias web
+
 ```bash
 pnpm install
 ```
 
-**Step 6 — Start the application**
+### 6. Levantar toda la app
+
 ```bash
 just dev
 ```
-This starts the Spring Boot API, the Next.js frontend, and the OpenAPI watcher all at once with colored output. Leave this terminal open.
 
-The app is now running at **http://localhost:3000**.
+Servicios locales:
 
-### Individual tasks
-
-| Command | Description |
+| Servicio | URL |
 |---|---|
-| `just setup` | Copy `.env.example` and `.env.local.example` to their real files (skips if already exists) |
-| `just dev` | Start Spring API + Next.js + OpenAPI watcher together |
-| `just api` | Spring Boot API only (port 8080) |
-| `just mock-api` | Mock API only (port 8080) — use instead of `just api` for frontend-only work |
-| `just web` | Next.js frontend only (port 3000) |
-| `just watch` | OpenAPI spec watcher (auto-generates TypeScript client on spec change) |
-| `just compile` | Recompile the API to trigger devtools hot reload |
-| `just infra-up` | Start Docker services (Neo4j, FusionAuth, MinIO) |
-| `just infra-down` | Stop Docker services |
-| `just infra-reset` | Wipe and restart all Docker services |
-| `just fusionauth-reset` | Re-run FusionAuth kickstart (e.g. after changing `kickstart.json`) |
-| `just seed <file>` | Copy a Cypher file from `apps/api/import/` into Neo4j and run it |
-| `just generate-api` | Manually regenerate the TypeScript API client from the OpenAPI spec |
-
-### Services
-
-| Service | URL |
-|---|---|
+| Web | http://localhost:3000 |
 | API | http://localhost:8080 |
-| API Docs | http://localhost:8080/docs |
+| Health API | http://localhost:8080/api/health |
+| Client API Docs | http://localhost:8080/client/docs |
+| Admin API Docs | http://localhost:8080/admin/docs |
 | FusionAuth | http://localhost:9011 |
 | Neo4j Browser | http://localhost:7474 |
 | MinIO Console | http://localhost:9101 |
-| Next.js | http://localhost:3000 |
 
-> **Hot reload:** devtools watches `target/classes`. After editing a `.java` file, run `just compile` to trigger the API restart.
+## Levantar Solo el Backend
 
-### IntelliJ IDEA setup
+Con shell compatible con `sh`:
 
-The Next.js module is pre-configured and will be recognized automatically when you open the repo root.
+```bash
+just api
+```
 
-For the Spring API module, IntelliJ needs to read it from Maven once:
-1. Open the repo root in IntelliJ IDEA Ultimate
-2. In the Project tree, right-click `apps/api/pom.xml` → **Add as Maven Project**
-3. IntelliJ will index dependencies and enable full Spring/Java support
+Con PowerShell desde el root:
 
-> The Spring module can't be pre-committed because IntelliJ generates it with absolute paths to your local Maven repository (`~/.m2`), which differ per machine. The Next.js module has no machine-specific paths so it's safe to commit.
+```powershell
+Get-Content .env | Where-Object { $_ -match '^\s*[^#][^=]*=' } | ForEach-Object { $k,$v = $_ -split '=',2; [Environment]::SetEnvironmentVariable($k.Trim(), $v.Trim(), 'Process') }; Set-Location apps/api; .\mvnw.cmd spring-boot:run
+```
+
+Probar:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/health
+```
+
+Respuesta esperada:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## Comandos
+
+| Comando | Descripcion |
+|---|---|
+| `just setup` | Crea `.env` y `apps/web/.env.local` desde ejemplos |
+| `just dev` | Levanta API, web y watcher OpenAPI |
+| `just api` | Levanta solo Spring Boot en `:8080` |
+| `just web` | Levanta solo Next.js en `:3000` |
+| `just mock-api` | Levanta API falsa en `:8080` |
+| `just watch` | Observa cambios OpenAPI |
+| `just compile` | Compila la API para activar reload |
+| `just infra-up` | Levanta infraestructura Docker |
+| `just infra-down` | Detiene infraestructura Docker |
+| `just infra-reset` | Borra volumenes y recrea infraestructura |
+| `just fusionauth-reset` | Reinicia FusionAuth y su Postgres |
+| `just seed <file>` | Ejecuta un `.cypher` desde `apps/api/import/` |
+| `just generate-api` | Regenera clientes TypeScript desde OpenAPI |
+
+## Modelo de Grafo
+
+Nodos principales:
+
+```text
+(:User)
+(:Drink)
+(:Flavor)
+(:Place)
+```
+
+Relaciones:
+
+```text
+(User)-[:LIKES {score}]->(Flavor)
+(Drink)-[:HAS_FLAVOR {intensity}]->(Flavor)
+(User)-[:CONSUMED {rating, date}]->(Drink)
+(Drink)-[:SERVED_AT]->(Place)
+```
+
+Restricciones principales:
+
+```cypher
+CREATE CONSTRAINT drink_id_unique IF NOT EXISTS
+FOR (d:Drink) REQUIRE d.id IS UNIQUE;
+
+CREATE CONSTRAINT flavor_name_unique IF NOT EXISTS
+FOR (f:Flavor) REQUIRE f.name IS UNIQUE;
+
+CREATE CONSTRAINT user_id_unique IF NOT EXISTS
+FOR (u:User) REQUIRE u.id IS UNIQUE;
+
+CREATE CONSTRAINT place_id_unique IF NOT EXISTS
+FOR (p:Place) REQUIRE p.id IS UNIQUE;
+```
+
+## Motor de Recomendaciones
+
+El motor vive en:
+
+```text
+apps/api/src/main/java/com/uvg/drunkgraph/modules/recommendation
+```
+
+Flujo:
+
+```text
+RecommendationHandler
+  -> RecommendationServiceImpl
+  -> RecommendationRepository
+  -> Neo4jClient
+  -> Neo4j
+```
+
+El ranking considera:
+
+- Coincidencia entre sabores que le gustan al usuario y sabores de la bebida.
+- Peso del gusto del usuario: `LIKES.score`.
+- Intensidad del sabor en la bebida: `HAS_FLAVOR.intensity`.
+- Presupuesto maximo del usuario.
+- Preferencia por bebidas alcoholicas o sin alcohol.
+- Bebidas ya consumidas, que se excluyen del top.
+
+Formula base:
+
+```text
+scoreFlavor = ((intersection / unionSize) * 0.5)
+            + ((weightedBonus / unionSize) * 0.5)
+
+weightedBonus = sum(LIKES.score * HAS_FLAVOR.intensity)
+scoreFinal = scoreFlavor + scorePrice
+```
+
+El ajuste de precio penaliza bebidas fuera del presupuesto:
+
+```text
+si drink.price > user.budget_max:
+    scorePrice = -0.30
+si no:
+    scorePrice = (1.0 - drink.price / user.budget_max) * 0.20
+```
+
+## Endpoints Principales
+
+### Publicos
+
+| Metodo | Ruta | Uso |
+|---|---|---|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/client/docs` | Docs cliente |
+| `GET` | `/admin/docs` | Docs admin |
+| `GET` | `/v3/api-docs/**` | OpenAPI |
+
+### Usuario autenticado
+
+| Metodo | Ruta | Uso |
+|---|---|---|
+| `GET` | `/api/users/me` | Perfil actual |
+| `PUT` | `/api/users/me` | Actualizar presupuesto/preferencia de alcohol |
+| `GET` | `/api/users/me/tastes` | Listar gustos |
+| `POST` | `/api/users/me/tastes` | Agregar gusto |
+| `DELETE` | `/api/users/me/tastes/{flavor}` | Eliminar gusto |
+| `GET` | `/api/users/me/recommendations?limit=10` | Top recomendaciones |
+| `GET` | `/api/users/me/recommendations/{drinkId}` | Recomendacion para una bebida |
+| `POST` | `/api/users/me/consumption` | Registrar consumo |
+| `GET` | `/api/users/me/consumption` | Historial de consumo |
+| `DELETE` | `/api/users/me/consumption/{drinkId}` | Eliminar consumo |
+| `GET` | `/api/users/me/stats` | Estadisticas |
+| `GET` | `/api/drinks` | Listar bebidas |
+| `GET` | `/api/drinks/{id}` | Detalle de bebida |
+| `GET` | `/api/drinks/category/{category}` | Bebidas por categoria |
+| `GET` | `/api/flavors` | Listar sabores |
+
+### Administrador autenticado
+
+| Metodo | Ruta | Uso |
+|---|---|---|
+| `GET` | `/api/admin/places` | Listar lugares |
+| `POST` | `/api/admin/places` | Crear lugar |
+| `PUT` | `/api/admin/places/{id}` | Actualizar lugar |
+| `DELETE` | `/api/admin/places/{id}` | Eliminar lugar |
+| `GET` | `/api/admin/flavors` | Listar sabores |
+| `POST` | `/api/admin/flavors` | Crear sabor |
+| `PUT` | `/api/admin/flavors/{name}` | Actualizar sabor |
+| `DELETE` | `/api/admin/flavors/{name}` | Eliminar sabor |
+| `GET` | `/api/admin/drinks` | Listar bebidas |
+| `GET` | `/api/admin/drinks/{id}` | Detalle de bebida |
+| `POST` | `/api/admin/places/{placeId}/drinks/batch` | Importar bebidas |
+| `PUT` | `/api/admin/drinks/{id}` | Actualizar bebida |
+| `DELETE` | `/api/admin/drinks/{id}` | Eliminar bebida |
+| `POST` | `/api/admin/uploads/sign` | Firmar upload Cloudinary |
+
+## Importar Data a Neo4j
+
+Los scripts `.cypher` viven en:
+
+```text
+apps/api/import/
+```
+
+Para importar el dataset generado desde el JSON:
+
+```bash
+just seed neo4j_query_table_data_2026_6_2.cypher
+```
+
+El comando hace:
+
+```text
+docker cp apps/api/import/<file> neo4j:/tmp/<file>
+docker exec -it neo4j cypher-shell -u neo4j -p "$NEO4J_PASSWORD" -f /tmp/<file>
+```
+
+Importante:
+
+- Ese script usa `CREATE`, por lo que es mejor ejecutarlo en una base vacia.
+- Si ya existen nodos con los mismos `id`, Neo4j puede fallar por constraints.
+- Para limpiar una base local de desarrollo puedes usar Neo4j Browser y ejecutar `MATCH (n) DETACH DELETE n;`.
+
+## Deploy del Backend en Render
+
+El backend tiene un `Dockerfile` en el root. Render debe crear un Web Service con runtime Docker.
+
+Configuracion recomendada:
+
+| Campo | Valor |
+|---|---|
+| Runtime | Docker |
+| Dockerfile Path | `Dockerfile` |
+| Root Directory | root del repo |
+| Health Check Path | `/api/health` |
+
+Variables recomendadas en Render:
+
+```env
+NEO4J_URI=neo4j+s://<database-id>.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=<password-real>
+
+FUSIONAUTH_ISSUER_URI=<issuer-publico>
+FUSIONAUTH_JWKS_URI=<issuer-publico>/.well-known/jwks.json
+
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_API_KEY=<api-key>
+CLOUDINARY_API_SECRET=<api-secret>
+
+SPRING_PROFILES_ACTIVE=prod
+```
+
+No agregues `.env` a la imagen Docker. Render debe inyectar las variables en runtime.
+
+Probar deploy:
+
+```bash
+curl https://<tu-servicio>.onrender.com/api/health
+```
+
+## Documentacion Extra
+
+| Archivo | Contenido |
+|---|---|
+| [`docs/recommendation-system.md`](docs/recommendation-system.md) | Uso e instalacion del sistema de recomendaciones |
+| [`docs/app-report.md`](docs/app-report.md) | Informe tecnico de la aplicacion |
+| [`docs/auth.md`](docs/auth.md) | Arquitectura de autenticacion |
+| [`docs/diagrams/backend-class-diagram.puml`](docs/diagrams/backend-class-diagram.puml) | Diagrama de clases backend |
+| [`docs/diagrams/graph-entity-diagram.puml`](docs/diagrams/graph-entity-diagram.puml) | Diagrama de entidades Neo4j |
+| [`docs/diagrams/recommendation-sequence.puml`](docs/diagrams/recommendation-sequence.puml) | Secuencia de recomendaciones |
+| [`docs/diagrams/admin-import-sequence.puml`](docs/diagrams/admin-import-sequence.puml) | Secuencia de importacion admin |
+| [`docs/diagrams/auth-provisioning-sequence.puml`](docs/diagrams/auth-provisioning-sequence.puml) | Secuencia de auth y provisioning |
+
+Los archivos `.puml` se pueden copiar directamente en PlantText o abrir con cualquier visor PlantUML.
+
+## Troubleshooting
+
+### `GET /` responde 401
+
+Es normal. La raiz no es publica. Usa:
+
+```text
+/api/health
+```
+
+### Render dice "No open ports detected" por unos segundos
+
+Spring Boot puede tardar en iniciar. Si luego aparece `Detected service running on port <PORT>` y `/api/health` responde, el deploy esta bien.
+
+### Neo4j Aura no conecta
+
+Verifica que uses el protocolo correcto:
+
+```env
+NEO4J_URI=neo4j+s://<database-id>.databases.neo4j.io
+```
+
+No uses `localhost` en Render.
+
+### Las recomendaciones salen vacias
+
+Revisa que existan:
+
+- `(:Drink)` con relaciones `HAS_FLAVOR`.
+- `(:Flavor)` con nombres iguales a los gustos del usuario.
+- `(:User)` con relaciones `LIKES`.
+- `budget_max` mayor que `0`.
+- Bebidas no consumidas por el usuario.
+- Bebidas compatibles con `prefers_alcohol`.
+
+### Los docs no cargan en `/docs`
+
+Las rutas actuales son:
+
+```text
+/client/docs
+/admin/docs
+```
+
+Tambien existen los archivos estaticos:
+
+```text
+/client-docs.html
+/admin-docs.html
+```

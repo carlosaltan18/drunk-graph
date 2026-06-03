@@ -1,0 +1,210 @@
+@startuml
+title DrunkGraph - Diagrama de clases del backend
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "infra.http.client" {
+  class UserHandler {
+    +me(jwt): User
+    +getTastes(jwt): Map
+    +addTaste(jwt, request): ResponseEntity
+    +registerConsumption(jwt, request): ResponseEntity
+    +updatePreferences(jwt, request): User
+    +getStats(jwt): UserStats
+    +getConsumedDrinks(jwt, page, limit): PagedResult
+  }
+
+  class DrinkHandler {
+    +listAll(search, page, limit): PagedResult
+    +findById(id): Drink
+    +findByCategory(category, search, page, limit): PagedResult
+  }
+
+  class FlavorHandler {
+    +listAll(): List
+  }
+
+  class RecommendationHandler {
+    +recommend(jwt, limit): List
+    +recommendByDrinkId(jwt, drinkId): Recommendation
+  }
+}
+
+package "infra.http.admin" {
+  class AdminPlaceHandler {
+    +listAll(search, page, limit): PagedResult
+    +create(request): ResponseEntity
+    +update(id, request): Place
+    +softDelete(id): ResponseEntity
+  }
+
+  class AdminFlavorHandler {
+    +listAll(): List
+    +create(request): ResponseEntity
+    +update(name, request): Flavor
+    +delete(name): ResponseEntity
+  }
+
+  class AdminDrinkHandler {
+    +listAll(placeId, search, page, limit): PagedResult
+    +findById(id): Drink
+    +importBatch(placeId, request): ResponseEntity
+    +update(id, request): Drink
+    +delete(id): ResponseEntity
+  }
+
+  class AdminUploadHandler {
+    +sign(folder): ResponseEntity
+  }
+}
+
+package "modules.user" {
+  interface IUserService
+  class UserServiceImpl
+  class UserRepository
+  class ProvisionUserUseCase
+  interface UserProvisioningPort
+  class Neo4jUserProvisioningAdapter
+
+  class User {
+    -String id
+    -String alias
+    -int age
+    -double budgetMax
+    -boolean prefersAlcohol
+    -Map tastes
+  }
+}
+
+package "modules.drink" {
+  interface IDrinkService
+  class DrinkServiceImpl
+  class DrinkRepository
+
+  class Drink {
+    -String id
+    -String name
+    -String category
+    -String placeId
+    -String placeName
+    -double alcoholPct
+    -double price
+    -Map flavors
+    -List images
+  }
+
+  class DrinkImage {
+    -String id
+    -String url
+  }
+}
+
+package "modules.flavor" {
+  interface IFlavorService
+  class FlavorServiceImpl
+  class FlavorRepository
+
+  class Flavor {
+    -String name
+    -String description
+  }
+}
+
+package "modules.place" {
+  interface IAdminPlaceService
+  class AdminPlaceServiceImpl
+  class PlaceRepository
+
+  class Place {
+    -String id
+    -String name
+    -String location
+  }
+}
+
+package "modules.recommendation" {
+  interface IRecommendationService
+  class RecommendationServiceImpl
+  class RecommendationRepository
+
+  class Recommendation {
+    -String drinkId
+    -String drink
+    -String category
+    -double price
+    -double scoreFlavor
+    -double scorePrice
+    -double scoreFinal
+    -List imageUrls
+  }
+}
+
+package "infra.cloudinary" {
+  interface ImageResolver {
+    +resolve(publicIds): List
+  }
+
+  class CloudinaryImageResolver
+  class CloudinaryService {
+    +signUpload(folder): Map
+  }
+}
+
+package "infra.security" {
+  class SecurityConfig
+  class ProvisioningJwtAuthenticationConverter {
+    +convert(jwt): AbstractAuthenticationToken
+  }
+}
+
+package "Spring Data Neo4j" {
+  class Neo4jClient <<framework>>
+}
+
+UserHandler --> IUserService
+DrinkHandler --> IDrinkService
+FlavorHandler --> IFlavorService
+RecommendationHandler --> IRecommendationService
+
+AdminPlaceHandler --> IAdminPlaceService
+AdminFlavorHandler --> IFlavorService
+AdminDrinkHandler --> IDrinkService
+AdminUploadHandler --> CloudinaryService
+
+IUserService <|.. UserServiceImpl
+UserServiceImpl --> UserRepository
+UserServiceImpl --> User
+UserRepository --> ImageResolver
+UserRepository --> Neo4jClient
+
+IDrinkService <|.. DrinkServiceImpl
+DrinkServiceImpl --> DrinkRepository
+DrinkServiceImpl --> Drink
+Drink "1" o-- "0..*" DrinkImage
+DrinkRepository --> ImageResolver
+DrinkRepository --> Neo4jClient
+
+IFlavorService <|.. FlavorServiceImpl
+FlavorServiceImpl --> FlavorRepository
+FlavorServiceImpl --> Flavor
+FlavorRepository --> Neo4jClient
+
+IAdminPlaceService <|.. AdminPlaceServiceImpl
+AdminPlaceServiceImpl --> PlaceRepository
+AdminPlaceServiceImpl --> Place
+PlaceRepository --> Neo4jClient
+
+IRecommendationService <|.. RecommendationServiceImpl
+RecommendationServiceImpl --> RecommendationRepository
+RecommendationServiceImpl --> Recommendation
+RecommendationRepository --> ImageResolver
+RecommendationRepository --> Neo4jClient
+
+ImageResolver <|.. CloudinaryImageResolver
+ProvisioningJwtAuthenticationConverter --> ProvisionUserUseCase
+ProvisionUserUseCase --> UserProvisioningPort
+UserProvisioningPort <|.. Neo4jUserProvisioningAdapter
+Neo4jUserProvisioningAdapter --> Neo4jClient
+
+@enduml

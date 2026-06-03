@@ -1,8 +1,8 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useSWR from "swr";
-import { ApiError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/error";
 
 type ApiRecommendation = components["schemas"]["Recommendation"];
 
@@ -29,10 +29,11 @@ export function useRecommendation(
   drinkId: string,
   fallbackData?: ApiRecommendation,
 ) {
-  const { data, isLoading } = useSWR<ApiRecommendation>(
-    ["/api/users/me/recommendations", drinkId] satisfies RecommendationKey,
-    fetchRecommendation,
-    { fallbackData },
-  );
+  const swrKey: RecommendationKey = ["/api/users/me/recommendations", drinkId];
+  const { data, isLoading } = useSWR<
+    ApiRecommendation | null,
+    Error,
+    RecommendationKey
+  >(swrKey, fetchRecommendation, { fallbackData });
   return { recommendation: data, isLoading };
 }
