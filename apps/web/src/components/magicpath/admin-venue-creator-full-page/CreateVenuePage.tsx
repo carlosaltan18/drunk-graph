@@ -266,7 +266,7 @@ export const CreateVenuePage = ({ userEmail }: Props) => {
                       "Venue is added to your catalog",
                       "You'll be redirected to the venue list",
                       "Add drinks to make them discoverable",
-                    ].map((step) => (
+                    ].map((step, idx) => (
                       <div key={step} className="flex gap-4 items-start group">
                         <span className="flex-none w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-black text-zinc-500 group-hover:border-amber-400 group-hover:text-amber-400 transition-colors">
                           {idx + 1}
