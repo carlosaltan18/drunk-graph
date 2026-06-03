@@ -8,7 +8,9 @@ interface UploadSignResponse {
   folder: string;
 }
 
-export async function uploadToCloudinary(file: File): Promise<{ id: string; url: string }> {
+export async function uploadToCloudinary(
+  file: File,
+): Promise<{ id: string; url: string }> {
   const sigRes = await adminClientApi.POST("/api/admin/uploads/sign", {});
   if (!sigRes.response.ok)
     throw new Error(`Sign failed: ${sigRes.response.status}`);

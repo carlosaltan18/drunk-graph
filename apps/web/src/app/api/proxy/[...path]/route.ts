@@ -18,7 +18,10 @@ async function handler(
   const accessToken = tokenData?.accessToken;
 
   if (!accessToken) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized", reason: "session_dead" },
+      { status: 401 },
+    );
   }
 
   const { path } = await params;

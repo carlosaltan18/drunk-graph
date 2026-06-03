@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
 
   const fusionAuthUrl = env.FUSIONAUTH_URL;
   const isAdmin = role === "admin";
-  const clientId = isAdmin ? env.BACKOFFICE_CLIENT_ID : env.FUSIONAUTH_CLIENT_ID;
+  const clientId = isAdmin
+    ? env.BACKOFFICE_CLIENT_ID
+    : env.FUSIONAUTH_CLIENT_ID;
   const postLogoutRedirect = isAdmin
     ? `${env.NEXT_PUBLIC_APP_URL}/admin/login`
     : `${env.NEXT_PUBLIC_APP_URL}/login`;

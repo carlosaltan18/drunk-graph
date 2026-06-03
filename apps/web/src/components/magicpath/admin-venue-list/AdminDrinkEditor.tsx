@@ -40,7 +40,10 @@ function apiToEditorDrink(d: ApiDrink, placeName: string): EditorDrink {
     price: d.price ?? 0,
     alcoholPercent: d.alcoholPct ?? 0,
     place: placeName,
-    images: (d.images ?? []).map((img) => ({ id: img.id ?? "", url: img.url ?? "" })),
+    images: (d.images ?? []).map((img) => ({
+      id: img.id ?? "",
+      url: img.url ?? "",
+    })),
     flavors: {
       sweet: flavors.sweet ?? 0,
       bitter: flavors.bitter ?? 0,
@@ -72,7 +75,9 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({
   );
   const [isSaving, setIsSaving] = React.useState(false);
   const [savedId, setSavedId] = React.useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(
+    null,
+  );
 
   const handleUpdate = (index: number, updates: Partial<EditorDrink>) => {
     setDrinks((prev) => {
@@ -101,97 +106,105 @@ export const AdminDrinkEditor: React.FC<EditorProps> = ({
 
   return (
     <>
-    <DrinkSpecEditor
-      drinks={drinks}
-      userEmail={userEmail}
-      venueName={placeName}
-      importHref={`/admin/places/${place.id}/import`}
-      onBack={() => router.back()}
-      onUpdate={handleUpdate}
-      onAddFiles={async (index, files) => {
-        const uploaded = await Promise.all(files.map(uploadToCloudinary));
-        handleUpdate(index, {
-          images: [...drinks[index].images, ...uploaded],
-        });
-      }}
-      onRemoveImage={(index, imageIndex) => {
-        handleUpdate(index, {
-          images: drinks[index].images.filter((_, i) => i !== imageIndex),
-        });
-      }}
-      footer={(currentDrink) => (
-        <>
-          <BrandButton
-            variant="admin"
-            size="xl"
-            className="w-full"
-            showArrow
-            onClick={() => handleSave(currentDrink)}
-            disabled={isSaving}
-          >
-            {isSaving
-              ? "Saving..."
-              : savedId === currentDrink.id
-                ? "Saved!"
-                : "Save Changes"}
-          </BrandButton>
-          <div className="flex gap-2">
-            <Link
-              href={`/admin/places/${place.id}/import`}
-              className="flex items-center justify-center gap-2 flex-1 py-3 border border-zinc-700 rounded-xl hover:border-amber-400 hover:text-amber-400 text-zinc-500 transition-all text-[11px] font-black uppercase tracking-widest"
+      <DrinkSpecEditor
+        drinks={drinks}
+        userEmail={userEmail}
+        venueName={placeName}
+        importHref={`/admin/places/${place.id}/import`}
+        onBack={() => router.back()}
+        onUpdate={handleUpdate}
+        onAddFiles={async (index, files) => {
+          const uploaded = await Promise.all(files.map(uploadToCloudinary));
+          handleUpdate(index, {
+            images: [...drinks[index].images, ...uploaded],
+          });
+        }}
+        onRemoveImage={(index, imageIndex) => {
+          handleUpdate(index, {
+            images: drinks[index].images.filter((_, i) => i !== imageIndex),
+          });
+        }}
+        footer={(currentDrink) => (
+          <>
+            <BrandButton
+              variant="admin"
+              size="xl"
+              className="w-full"
+              showArrow
+              onClick={() => handleSave(currentDrink)}
+              disabled={isSaving}
             >
-              <UploadCloud className="w-4 h-4" />
-              Upload New Drinks
-            </Link>
+              {isSaving
+                ? "Saving..."
+                : savedId === currentDrink.id
+                  ? "Saved!"
+                  : "Save Changes"}
+            </BrandButton>
+            <div className="flex gap-2">
+              <Link
+                href={`/admin/places/${place.id}/import`}
+                className="flex items-center justify-center gap-2 flex-1 py-3 border border-zinc-700 rounded-xl hover:border-amber-400 hover:text-amber-400 text-zinc-500 transition-all text-[11px] font-black uppercase tracking-widest"
+              >
+                <UploadCloud className="w-4 h-4" />
+                Upload New Drinks
+              </Link>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(currentDrink.id)}
+                className="flex items-center justify-center gap-2 px-4 py-3 border border-zinc-700 rounded-xl hover:border-red-500 hover:text-red-500 text-zinc-500 transition-all text-[11px] font-black uppercase tracking-widest"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        )}
+      />
+
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+      >
+        <DialogContent className="bg-zinc-900 border border-zinc-700 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white font-black uppercase tracking-tight">
+              Delete Drink?
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              This will permanently remove{" "}
+              <span className="text-white font-bold">
+                {drinks.find((d) => d.id === confirmDeleteId)?.name ??
+                  "this drink"}
+              </span>{" "}
+              from the catalog. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <button
               type="button"
-              onClick={() => setConfirmDeleteId(currentDrink.id)}
-              className="flex items-center justify-center gap-2 px-4 py-3 border border-zinc-700 rounded-xl hover:border-red-500 hover:text-red-500 text-zinc-500 transition-all text-[11px] font-black uppercase tracking-widest"
+              onClick={() => setConfirmDeleteId(null)}
+              className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-black uppercase tracking-widest transition-colors"
             >
-              <Trash2 className="w-4 h-4" />
+              Cancel
             </button>
-          </div>
-        </>
-      )}
-    />
-
-    <Dialog open={!!confirmDeleteId} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null); }}>
-      <DialogContent className="bg-zinc-900 border border-zinc-700 text-white max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-white font-black uppercase tracking-tight">
-            Delete Drink?
-          </DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            This will permanently remove{" "}
-            <span className="text-white font-bold">
-              {drinks.find((d) => d.id === confirmDeleteId)?.name ?? "this drink"}
-            </span>{" "}
-            from the catalog. This cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <button
-            type="button"
-            onClick={() => setConfirmDeleteId(null)}
-            className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-black uppercase tracking-widest transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              if (!confirmDeleteId) return;
-              await deleteDrink(confirmDeleteId);
-              setConfirmDeleteId(null);
-              setDrinks((prev) => prev.filter((d) => d.id !== confirmDeleteId));
-            }}
-            className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-widest transition-colors"
-          >
-            Delete
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirmDeleteId) return;
+                await deleteDrink(confirmDeleteId);
+                setConfirmDeleteId(null);
+                setDrinks((prev) =>
+                  prev.filter((d) => d.id !== confirmDeleteId),
+                );
+              }}
+              className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-widest transition-colors"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

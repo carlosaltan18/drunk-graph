@@ -555,7 +555,12 @@ export const DrinkSpecEditor: React.FC<Props> = ({
       </Dialog>
 
       {/* Add images modal */}
-      <Dialog open={addImagesOpen} onOpenChange={(open) => { if (!open) closeAddModal(); }}>
+      <Dialog
+        open={addImagesOpen}
+        onOpenChange={(open) => {
+          if (!open) closeAddModal();
+        }}
+      >
         <DialogContent className="bg-zinc-950 border border-zinc-800 text-white !w-[620px] !max-w-[620px] p-0 overflow-hidden">
           <input
             ref={addImageInputRef}
@@ -587,7 +592,10 @@ export const DrinkSpecEditor: React.FC<Props> = ({
             {/* Dropzone */}
             <div
               onClick={() => !uploading && addImageInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -597,15 +605,25 @@ export const DrinkSpecEditor: React.FC<Props> = ({
               className={cn(
                 "relative border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden",
                 stagedFiles.length > 0 ? "py-6" : "py-16",
-                uploading ? "opacity-50 cursor-not-allowed pointer-events-none" :
-                dragOver ? "border-amber-400 bg-amber-400/5" : "border-zinc-700 hover:border-zinc-500 bg-zinc-900/40",
+                uploading
+                  ? "opacity-50 cursor-not-allowed pointer-events-none"
+                  : dragOver
+                    ? "border-amber-400 bg-amber-400/5"
+                    : "border-zinc-700 hover:border-zinc-500 bg-zinc-900/40",
               )}
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#27272a_1px,_transparent_1px)] bg-[length:16px_16px] opacity-20 pointer-events-none" />
-              <UploadCloud className={cn("w-8 h-8 transition-colors relative z-10", dragOver ? "text-amber-400" : "text-zinc-600")} />
+              <UploadCloud
+                className={cn(
+                  "w-8 h-8 transition-colors relative z-10",
+                  dragOver ? "text-amber-400" : "text-zinc-600",
+                )}
+              />
               <div className="text-center relative z-10">
                 <span className="block text-xs font-black uppercase tracking-widest text-zinc-300">
-                  {dragOver ? "Release to add" : "Drop images here or click to browse"}
+                  {dragOver
+                    ? "Release to add"
+                    : "Drop images here or click to browse"}
                 </span>
                 <span className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-1">
                   PNG, JPG or WEBP
@@ -617,12 +635,22 @@ export const DrinkSpecEditor: React.FC<Props> = ({
             {stagedPreviews.length > 0 && (
               <div className="grid grid-cols-5 gap-3">
                 {stagedPreviews.map((url, i) => (
-                  <div key={url} className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-800">
+                  <div
+                    key={url}
+                    className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-800"
+                  >
                     {/* biome-ignore lint/performance/noImgElement: blob URL, admin-only */}
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); removeStagedFile(i); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeStagedFile(i);
+                      }}
                       className="absolute top-1 right-1 w-5 h-5 rounded bg-black/70 border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
                     >
                       <X className="w-3 h-3 text-white" />
@@ -649,9 +677,15 @@ export const DrinkSpecEditor: React.FC<Props> = ({
               className="flex items-center gap-2 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed text-black text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors"
             >
               {uploading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Adding…
+                </>
               ) : (
-                <><Plus className="w-4 h-4" /> Add {stagedFiles.length > 0 ? stagedFiles.length : ""} Image{stagedFiles.length !== 1 ? "s" : ""}</>
+                <>
+                  <Plus className="w-4 h-4" /> Add{" "}
+                  {stagedFiles.length > 0 ? stagedFiles.length : ""} Image
+                  {stagedFiles.length !== 1 ? "s" : ""}
+                </>
               )}
             </button>
           </div>
