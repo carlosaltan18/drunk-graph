@@ -17,12 +17,13 @@ export class ApiError extends Error {
 export async function throwIfError(response: Response): Promise<void> {
   if (response.ok) return;
   if (response.status === 401) {
-    const body = await response
-      .clone()
-      .json()
-      .catch(() => ({}));
-    const reason: ApiErrorReason =
-      body?.reason === "session_dead" ? "session_dead" : "token_rejected";
+    let reason: ApiErrorReason = "token_rejected";
+    try {
+      const body = response.bodyUsed ? null : await response.json();
+      if (body?.reason === "session_dead") reason = "session_dead";
+    } catch {
+      // body unreadable — default to token_rejected
+    }
     throw new ApiError(401, response.statusText, reason);
   }
   throw new ApiError(response.status, response.statusText);

@@ -10,12 +10,15 @@ async function handler(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const reqHeaders = await headers();
-  const tokenData = await adminAuth.api.getAccessToken({
-    body: { providerId: "fusionauth-admin" },
-    headers: reqHeaders,
-  });
+  const tokenResult = await adminAuth.api
+    .getAccessToken({
+      body: { providerId: "fusionauth-admin" },
+      headers: reqHeaders,
+      returnHeaders: true,
+    })
+    .catch(() => null);
 
-  const accessToken = tokenData?.accessToken;
+  const accessToken = tokenResult?.response?.accessToken;
 
   if (!accessToken) {
     return NextResponse.json(
@@ -46,15 +49,24 @@ async function handler(
   const upstreamContentType = upstream.headers.get("content-type") ?? "";
   const text = await upstream.text();
 
+  let res: NextResponse;
   if (upstreamContentType.includes("application/json")) {
     const data = text ? JSON.parse(text) : null;
-    return NextResponse.json(data, { status: upstream.status });
+    res = NextResponse.json(data, { status: upstream.status });
+  } else {
+    res = new NextResponse(text, {
+      status: upstream.status,
+      headers: { "content-type": upstreamContentType },
+    });
   }
 
-  return new NextResponse(text, {
-    status: upstream.status,
-    headers: { "content-type": upstreamContentType },
+  // Forward refreshed cookies (e.g. updated account_data) back to the browser
+  tokenResult.headers?.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie")
+      res.headers.append("set-cookie", value);
   });
+
+  return res;
 }
 
 export const GET = handler;
