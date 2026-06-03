@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env.server";
+import { getAccessToken } from "@/lib/get-access-token";
 
 const SPRING_BASE_URL = env.SPRING_API_URL.replace(/\/$/, "");
 
@@ -10,21 +11,7 @@ async function handler(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const reqHeaders = await headers();
-  const tokenResult = await auth.api
-    .getAccessToken({
-      body: { providerId: "fusionauth" },
-      headers: reqHeaders,
-      returnHeaders: true,
-    })
-    .catch((err) => {
-      console.error(
-        "[proxy] getAccessToken threw:",
-        err?.status,
-        err?.message,
-        err?.body,
-      );
-      return null;
-    });
+  const tokenResult = await getAccessToken(auth, "fusionauth", reqHeaders);
 
   const accessToken = tokenResult?.response?.accessToken;
 
