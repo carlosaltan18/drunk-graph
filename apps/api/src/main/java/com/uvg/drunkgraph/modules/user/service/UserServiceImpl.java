@@ -47,7 +47,8 @@ public class UserServiceImpl implements IUserService {
     @Override
     public void registerConsume(String userId, ConsumptionRequest request) {
         findById(userId);
-        repo.registerConsume(userId, request.getDrinkId(), request.getRating());
+        String comment = request.getComment() == null ? "" : request.getComment().trim();
+        repo.registerConsume(userId, request.getDrinkId(), request.getRating(), comment);
     }
 
     @Override

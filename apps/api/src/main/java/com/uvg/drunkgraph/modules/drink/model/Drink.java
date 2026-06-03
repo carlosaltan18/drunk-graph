@@ -26,4 +26,5 @@ public class Drink {
     private Map<String, Double> flavors;
 
     private List<DrinkImage> images;
+    private List<DrinkComment> comments;
 }

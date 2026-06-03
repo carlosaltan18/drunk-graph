@@ -2,6 +2,7 @@ package com.uvg.drunkgraph.modules.drink.repository;
 
 import com.uvg.drunkgraph.infra.cloudinary.ImageResolver;
 import com.uvg.drunkgraph.modules.drink.model.Drink;
+import com.uvg.drunkgraph.modules.drink.model.DrinkComment;
 import com.uvg.drunkgraph.modules.drink.model.DrinkImage;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import org.neo4j.driver.Value;
@@ -33,6 +34,25 @@ public class DrinkRepository {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a));
     }
 
+    private static List<DrinkComment> mapComments(Value commentsValue) {
+        if (commentsValue.isNull()) {
+            return List.of();
+        }
+
+        return commentsValue.asList(comment -> {
+                    if (comment.get("comment").isNull()) return null;
+                    return DrinkComment.builder()
+                            .userId(comment.get("userId").isNull() ? null : comment.get("userId").asString())
+                            .alias(comment.get("alias").isNull() ? "Anonymous" : comment.get("alias").asString())
+                            .rating(comment.get("rating").isNull() ? 0 : comment.get("rating").asInt())
+                            .comment(comment.get("comment").asString())
+                            .date(comment.get("date").isNull() ? null : comment.get("date").asLocalDate())
+                            .build();
+                }).stream()
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
     private Drink mapRow(org.neo4j.driver.Record row) {
         List<String> publicIds = row.get("images").isNull()
                 ? List.of()
@@ -55,6 +75,7 @@ public class DrinkRepository {
                 .price(row.get("price").asDouble())
                 .images(images)
                 .flavors(mapFlavors(row.get("flavors")))
+                .comments(mapComments(row.get("comments")))
                 .build();
     }
 
@@ -66,7 +87,16 @@ public class DrinkRepository {
             d.images AS images,
             p.id AS placeId,
             p.name AS placeName,
-            collect({flavor: f.name, intensity: r.intensity}) AS flavors
+            collect({flavor: f.name, intensity: r.intensity}) AS flavors,
+            [(reviewer:User)-[c:CONSUMED]->(d)
+             WHERE c.comment IS NOT NULL AND trim(c.comment) <> ''
+             | {
+                 userId: reviewer.id,
+                 alias: reviewer.alias,
+                 rating: c.rating,
+                 comment: c.comment,
+                 date: c.date
+             }] AS comments
             """;
 
     public Optional<Drink> findById(String id) {

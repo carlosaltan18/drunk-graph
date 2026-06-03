@@ -10,7 +10,6 @@ import { useConsumption } from "@/lib/hooks/useConsumption";
 import { useStats } from "@/lib/hooks/useStats";
 import { cn } from "@/lib/utils";
 
-type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
 type PagedConsumedDrink = components["schemas"]["PagedResultConsumedDrink"];
 type UserStats = components["schemas"]["UserStats"];
 
@@ -174,6 +173,11 @@ export const DrunkGraphHistory = ({
                   <div className="mt-1">
                     <RatingStars rating={drink.rating ?? 0} />
                   </div>
+                  {drink.comment?.trim() && (
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-400">
+                      {drink.comment}
+                    </p>
+                  )}
                 </div>
 
                 <button

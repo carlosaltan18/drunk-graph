@@ -3,8 +3,8 @@ import type { components } from "@generated/api/schema.d.ts";
 import React from "react";
 import { toast } from "sonner";
 import useSWR, { mutate as globalMutate } from "swr";
-import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
 type PagedConsumedDrink = components["schemas"]["PagedResultConsumedDrink"];
@@ -42,15 +42,24 @@ export function useConsumption(fallbackElements?: ApiConsumedDrink[]) {
 
   const elements: ApiConsumedDrink[] = data?.elements ?? [];
 
-  const logDrink = async (drinkId: string, rating: number) => {
+  const logDrink = async (
+    drinkId: string,
+    rating: number,
+    comment?: string,
+  ) => {
+    const nextElements = elements.some((drink) => drink.id === drinkId)
+      ? elements.map((drink) =>
+          drink.id === drinkId ? { ...drink, rating, comment } : drink,
+        )
+      : [...elements, { id: drinkId, rating, comment }];
     const optimistic: PagedConsumedDrink = {
       ...data,
-      elements: [...elements, { id: drinkId, rating }],
+      elements: nextElements,
     };
     void mutate(optimistic, { revalidate: false });
     try {
       const res = await clientApi.POST("/api/users/me/consumption", {
-        body: { drinkId, rating },
+        body: { drinkId, rating, comment },
       });
       await throwIfError(res.response);
       void mutate();

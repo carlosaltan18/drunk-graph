@@ -22,6 +22,7 @@ public class ConsumedDrink {
     private String placeName;
     private double price;
     private int rating;
+    private String comment;
     private LocalDate date;
 
     @Schema(example = "{\"sweet\": 0.8, \"citrus\": 0.5}")

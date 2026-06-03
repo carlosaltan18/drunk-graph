@@ -141,15 +141,18 @@ public class UserRepository {
                 ));
     }
 
-    public void registerConsume(String userId, String drinkId, int rating) {
+    public void registerConsume(String userId, String drinkId, int rating, String comment) {
         neo4j.query("""
                 MATCH (u:User {id: $userId}), (d:Drink {id: $drinkId})
                 MERGE (u)-[r:CONSUMED]->(d)
-                SET r.rating = $rating, r.date = date()
+                SET r.rating = $rating,
+                    r.comment = CASE WHEN $comment = '' THEN null ELSE $comment END,
+                    r.date = date()
                 """)
                 .bind(userId).to("userId")
                 .bind(drinkId).to("drinkId")
                 .bind(rating).to("rating")
+                .bind(comment).to("comment")
                 .run();
     }
 
@@ -185,6 +188,7 @@ public class UserRepository {
                        p.id AS placeId,
                        p.name AS placeName,
                        c.rating AS rating,
+                       c.comment AS comment,
                        c.date AS date,
                        collect({flavor: f.name, intensity: hf.intensity}) AS flavors
                 ORDER BY c.date DESC
@@ -206,6 +210,7 @@ public class UserRepository {
                             .placeId(row.get("placeId").isNull() ? null : row.get("placeId").asString())
                             .placeName(row.get("placeName").isNull() ? null : row.get("placeName").asString())
                             .rating(row.get("rating").isNull() ? 0 : row.get("rating").asInt())
+                            .comment(row.get("comment").isNull() ? null : row.get("comment").asString())
                             .date(row.get("date").isNull() ? null : row.get("date").asLocalDate())
                             .imageUrls(imageResolver.resolve(publicIds))
                             .flavors(DrinkRepository.mapFlavors(row.get("flavors")))

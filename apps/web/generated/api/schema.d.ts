@@ -237,6 +237,7 @@ export interface components {
             drinkId: string;
             /** Format: int32 */
             rating?: number;
+            comment?: string;
         };
         UserStats: {
             /** Format: int32 */
@@ -269,6 +270,7 @@ export interface components {
             price?: number;
             /** Format: int32 */
             rating?: number;
+            comment?: string;
             /** Format: date */
             date?: string;
             /**
@@ -321,10 +323,20 @@ export interface components {
                 [key: string]: number;
             };
             images?: components["schemas"]["DrinkImage"][];
+            comments?: components["schemas"]["DrinkComment"][];
         };
         DrinkImage: {
             id?: string;
             url?: string;
+        };
+        DrinkComment: {
+            userId?: string;
+            alias?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string;
+            /** Format: date */
+            date?: string;
         };
         PagedResultDrink: {
             elements?: components["schemas"]["Drink"][];

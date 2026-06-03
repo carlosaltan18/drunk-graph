@@ -1,12 +1,11 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useEmblaCarousel from "embla-carousel-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Check,
   ChevronLeft,
-  ChevronRight,
   Info,
   MapPin,
   Star,
@@ -15,6 +14,7 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useState } from "react";
 import { Drawer } from "vaul";
 import { DrinkImage } from "@/components/magicpath/shared/DrinkImage";
+import { Textarea } from "@/components/ui/textarea";
 import { useConsumption } from "@/lib/hooks/useConsumption";
 import { useRecommendation } from "@/lib/hooks/useRecommendation";
 import { cn } from "@/lib/utils";
@@ -52,10 +52,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       <div className="overflow-hidden h-full" ref={emblaRef}>
         <div className="flex h-full">
           {images.map((url, index) => (
-            <div
-              key={index}
-              className="flex-[0_0_100%] min-w-0 h-full relative"
-            >
+            <div key={url} className="flex-[0_0_100%] min-w-0 h-full relative">
               <DrinkImage
                 src={url}
                 alt={`Drink photo ${index + 1}`}
@@ -71,9 +68,9 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
 
       {/* Dots */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {images.map((_, index) => (
+        {images.map((url, index) => (
           <div
-            key={index}
+            key={`${url}-dot`}
             className={cn(
               "h-1.5 rounded-full transition-all duration-300",
               selectedIndex === index
@@ -91,14 +88,12 @@ const FlavorIntensityDots = ({ intensity }: { intensity: number }) => {
   const filledDots = Math.round(intensity * 5);
   return (
     <div className="flex gap-1 items-center">
-      {Array.from({
-        length: totalDots,
-      }).map((_, i) => (
+      {Array.from({ length: totalDots }, (_, index) => index).map((dot) => (
         <div
-          key={i}
+          key={`intensity-dot-${dot}`}
           className={cn(
             "w-2 h-2 rounded-full",
-            i < filledDots ? "bg-orange-500" : "bg-zinc-700",
+            dot < filledDots ? "bg-orange-500" : "bg-zinc-700",
           )}
         />
       ))}
@@ -108,6 +103,20 @@ const FlavorIntensityDots = ({ intensity }: { intensity: number }) => {
 function toPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value * 100)));
 }
+const MiniRatingStars = ({ rating }: { rating: number }) => (
+  <div className="flex gap-0.5">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star
+        key={star}
+        size={11}
+        className={cn(
+          "fill-current",
+          star <= rating ? "text-amber-400" : "text-zinc-700",
+        )}
+      />
+    ))}
+  </div>
+);
 export const DrinkDetailScreen = ({
   drink,
   fallbackRecommendation,
@@ -116,13 +125,15 @@ export const DrinkDetailScreen = ({
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
   const sortedFlavors = Object.entries(drink?.flavors ?? {})
     .sort(([, a], [, b]) => b - a)
     .slice(0, 6);
 
-  const { hasTried, logDrink, removeDrink } = useConsumption(
+  const { consumption, hasTried, logDrink, removeDrink } = useConsumption(
     fallbackConsumption?.elements,
   );
+  const loggedDrink = consumption.find((item) => item.id === drink?.id);
   const drinkLogged = hasTried(drink?.id ?? "");
 
   const { recommendation } = useRecommendation(
@@ -133,13 +144,20 @@ export const DrinkDetailScreen = ({
   const scorePrice = recommendation?.scorePrice ?? 0;
   const scoreFinal = recommendation?.scoreFinal ?? 0;
   const hasScores = scoreFinal > 0;
+  const publicComments = [
+    ...(drink?.comments?.filter((item) => item.comment?.trim()) ?? []),
+  ].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
-  const handleLogDrink = () => setIsModalOpen(true);
+  const handleLogDrink = () => {
+    setRating(loggedDrink?.rating ?? 0);
+    setComment(loggedDrink?.comment ?? "");
+    setIsModalOpen(true);
+  };
 
   const confirmLog = async () => {
     if (!drink?.id) return;
     setIsModalOpen(false);
-    await logDrink(drink.id, rating || 1);
+    await logDrink(drink.id, rating || 1, comment.trim());
   };
 
   const handleRemoveLog = async () => {
@@ -156,6 +174,7 @@ export const DrinkDetailScreen = ({
             .filter(Boolean)}
         />
         <button
+          type="button"
           onClick={() => router.back()}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform"
         >
@@ -215,6 +234,39 @@ export const DrinkDetailScreen = ({
           </div>
         </div>
       </section>
+
+      {publicComments.length > 0 && (
+        <section className="px-5 py-2">
+          <div className="bg-zinc-900 rounded-xl p-5 border border-white/5 space-y-4">
+            <p className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">
+              Community notes
+            </p>
+            <div className="space-y-3">
+              {publicComments.map((item) => (
+                <article
+                  key={`${item.userId ?? item.alias ?? "guest"}-${item.date ?? "recent"}-${item.rating ?? 0}-${item.comment}`}
+                  className="border-t border-white/5 first:border-t-0 first:pt-0 pt-3"
+                >
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-zinc-200">
+                        {item.alias ?? "Anonymous"}
+                      </p>
+                      <p className="text-[10px] text-zinc-600">
+                        {item.date ?? "Recent"}
+                      </p>
+                    </div>
+                    <MiniRatingStars rating={item.rating ?? 0} />
+                  </div>
+                  <p className="text-sm leading-relaxed text-zinc-400">
+                    {item.comment}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Match Score Section */}
       {hasScores && (
@@ -327,6 +379,7 @@ export const DrinkDetailScreen = ({
         <div className="max-w-md mx-auto space-y-2">
           {!drinkLogged ? (
             <button
+              type="button"
               onClick={handleLogDrink}
               className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-orange-400"
             >
@@ -336,6 +389,7 @@ export const DrinkDetailScreen = ({
           ) : (
             <div className="space-y-2 text-center">
               <button
+                type="button"
                 onClick={handleLogDrink}
                 className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2"
               >
@@ -343,6 +397,7 @@ export const DrinkDetailScreen = ({
                 <Check size={16} className="text-green-500" strokeWidth={3} />
               </button>
               <button
+                type="button"
                 onClick={handleRemoveLog}
                 className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-bold"
               >
@@ -357,7 +412,7 @@ export const DrinkDetailScreen = ({
       <Drawer.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
-          <Drawer.Content className="bg-zinc-900 flex flex-col rounded-t-3xl h-[420px] mt-24 fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 outline-none">
+          <Drawer.Content className="bg-zinc-900 flex flex-col rounded-t-3xl min-h-[520px] mt-24 fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 outline-none">
             <div className="p-4 bg-zinc-900 rounded-t-3xl flex-1">
               <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-800 mb-8" />
               <div className="max-w-md mx-auto px-4 space-y-8">
@@ -373,6 +428,7 @@ export const DrinkDetailScreen = ({
                 <div className="flex justify-center items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
+                      type="button"
                       key={star}
                       onClick={() => setRating(star)}
                       className="p-1 transition-transform active:scale-90"
@@ -397,8 +453,26 @@ export const DrinkDetailScreen = ({
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <label
+                    htmlFor="drink-comment"
+                    className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold"
+                  >
+                    Comment
+                  </label>
+                  <Textarea
+                    id="drink-comment"
+                    value={comment}
+                    onChange={(event) => setComment(event.target.value)}
+                    maxLength={500}
+                    placeholder="What stood out?"
+                    className="min-h-24 resize-none border-zinc-800 bg-zinc-950 text-sm text-zinc-100 placeholder:text-zinc-700 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                  />
+                </div>
+
                 <div className="pt-4">
                   <button
+                    type="button"
                     onClick={confirmLog}
                     className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >
