@@ -11,7 +11,11 @@ async function handler(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const reqHeaders = await headers();
-  const tokenResult = await getAccessToken(adminAuth, "fusionauth-admin", reqHeaders);
+  const tokenResult = await getAccessToken(
+    adminAuth,
+    "fusionauth-admin",
+    reqHeaders,
+  );
 
   const accessToken = tokenResult?.response?.accessToken;
 

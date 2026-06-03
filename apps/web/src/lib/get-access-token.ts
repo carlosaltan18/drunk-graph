@@ -1,16 +1,25 @@
-import type { betterAuth } from "better-auth";
-
-type AuthInstance = ReturnType<typeof betterAuth>;
+type AnyAuthInstance = {
+  api: {
+    getAccessToken: (opts: {
+      body: { providerId: string };
+      headers: Headers;
+      returnHeaders: true;
+    }) => Promise<unknown>;
+  };
+};
 
 // Per-auth-instance map of sessionToken → in-flight refresh promise.
 // Coalesces concurrent requests that race to refresh the same token,
 // preventing FusionAuth from seeing multiple rotations of the same refresh token.
 const inflightByAuth = new WeakMap<
-  AuthInstance,
-  Map<string, Promise<{ headers: Headers; response: { accessToken?: string } } | null>>
+  AnyAuthInstance,
+  Map<
+    string,
+    Promise<{ headers: Headers; response: { accessToken?: string } } | null>
+  >
 >();
 
-function getInflightMap(authInstance: AuthInstance) {
+function getInflightMap(authInstance: AnyAuthInstance) {
   let map = inflightByAuth.get(authInstance);
   if (!map) {
     map = new Map();
@@ -20,7 +29,7 @@ function getInflightMap(authInstance: AuthInstance) {
 }
 
 export async function getAccessToken(
-  authInstance: AuthInstance,
+  authInstance: AnyAuthInstance,
   providerId: string,
   reqHeaders: Headers,
 ) {
