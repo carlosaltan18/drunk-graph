@@ -23,6 +23,7 @@ const sharedConfig = {
       enabled: true,
       strategy: "jwt" as const,
       refreshCache: true,
+      maxAge: 60 * 60 * 24 * 30, // 30 days — matches FusionAuth refresh token TTL
     },
   },
 };
