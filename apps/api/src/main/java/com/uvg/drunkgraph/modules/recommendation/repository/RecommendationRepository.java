@@ -36,7 +36,8 @@ public class RecommendationRepository {
                           ELSE (toFloat(intersection) / unionSize) * 0.5
                              + coalesce(weightedBonus, 0.0) * 0.5
                      END AS scoreFlavor,
-                     CASE WHEN d.price > u.budget_max THEN -0.30
+                     CASE WHEN u.budget_max <= 0 THEN 0.0
+                          WHEN d.price > u.budget_max THEN -0.30
                           ELSE (1.0 - d.price / u.budget_max) * 0.20
                      END AS scorePrice
                 RETURN d.id AS drinkId,
@@ -87,7 +88,8 @@ public class RecommendationRepository {
                           ELSE (toFloat(intersection) / unionSize) * 0.5
                              + coalesce(weightedBonus, 0.0) * 0.5
                      END AS scoreFlavor,
-                     CASE WHEN d.price > u.budget_max THEN -0.30
+                     CASE WHEN u.budget_max <= 0 THEN 0.0
+                          WHEN d.price > u.budget_max THEN -0.30
                           ELSE (1.0 - d.price / u.budget_max) * 0.20
                      END AS scorePrice
                 RETURN d.id AS drinkId,
