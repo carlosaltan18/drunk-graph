@@ -3,6 +3,8 @@ package com.uvg.drunkgraph.modules.user.repository;
 import com.uvg.drunkgraph.infra.cloudinary.ImageResolver;
 import com.uvg.drunkgraph.modules.shared.PagedResult;
 import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
+import com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest;
+import com.uvg.drunkgraph.modules.user.dto.UserStats;
 import com.uvg.drunkgraph.modules.user.model.User;
 import com.uvg.drunkgraph.support.Neo4jClientMockSupport.QueryStub;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,6 +132,45 @@ class UserRepositoryTest {
         assertEquals(4, result.getLimit());
         verify(pageQuery.spec()).bind(12L);
         verify(pageQuery.spec()).bind(4L);
+    }
+
+    @Test
+    void updatePreferencesBindsNullablePreferenceFields() {
+        QueryStub query = queryStub();
+        UserPreferencesRequest request = new UserPreferencesRequest();
+        request.setBudgetMax(125.0);
+        request.setPrefersAlcohol(false);
+        when(neo4j.query(anyString())).thenReturn(query.spec());
+
+        repository.updatePreferences("u1", request);
+
+        verify(query.spec()).bind("u1");
+        verify(query.spec()).bind(125.0);
+        verify(query.spec()).bind(false);
+        verify(query.binding()).to("userId");
+        verify(query.binding()).to("budgetMax");
+        verify(query.binding()).to("prefersAlcohol");
+        verify(query.spec()).run();
+    }
+
+    @Test
+    void getStatsBuildsStatsFromThreeQueries() {
+        QueryStub triedQuery = queryStub();
+        QueryStub venuesQuery = queryStub();
+        QueryStub categoryQuery = queryStub();
+        when(neo4j.query(anyString())).thenReturn(triedQuery.spec(), venuesQuery.spec(), categoryQuery.spec());
+        stubFetchOne(triedQuery, Long.class, Optional.of(3L));
+        stubFetchOne(venuesQuery, Long.class, Optional.of(2L));
+        stubFetchOne(categoryQuery, String.class, Optional.of("cocktail"));
+
+        UserStats result = repository.getStats("u1");
+
+        assertEquals(3, result.getTried());
+        assertEquals(2, result.getVenues());
+        assertEquals("cocktail", result.getFavCategory());
+        verify(triedQuery.spec()).bind("u1");
+        verify(venuesQuery.spec()).bind("u1");
+        verify(categoryQuery.spec()).bind("u1");
     }
 
     private static User user(String id) {

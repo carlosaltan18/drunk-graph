@@ -1,5 +1,6 @@
 package com.uvg.drunkgraph.modules.flavor.service;
 
+import com.uvg.drunkgraph.modules.exception.ConflictException;
 import com.uvg.drunkgraph.modules.exception.ResourceNotFoundException;
 import com.uvg.drunkgraph.modules.flavor.dto.FlavorRequest;
 import com.uvg.drunkgraph.modules.flavor.model.Flavor;
@@ -10,8 +11,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,17 +43,19 @@ class FlavorServiceImplTest {
     }
 
     @Test
-    void createPersistsNewFlavorWithEmptyDescriptionWhenNull() {
-        FlavorRequest request = request("sweet", null);
+    void createPersistsNewFlavor() {
+        FlavorRequest request = request("sweet", "Azucarado");
+        Flavor created = flavor("sweet", "Azucarado");
         when(flavorRepo.findByName("sweet")).thenReturn(Optional.empty());
+        when(flavorRepo.create(any())).thenReturn(created);
         ArgumentCaptor<Flavor> captor = ArgumentCaptor.forClass(Flavor.class);
 
         Flavor result = service.create(request);
 
         verify(flavorRepo).create(captor.capture());
         assertEquals("sweet", captor.getValue().getName());
-        assertEquals("", captor.getValue().getDescription());
-        assertEquals(captor.getValue(), result);
+        assertEquals("Azucarado", captor.getValue().getDescription());
+        assertSame(created, result);
     }
 
     @Test
@@ -62,26 +63,25 @@ class FlavorServiceImplTest {
         FlavorRequest request = request("sweet", "Azucarado");
         when(flavorRepo.findByName("sweet")).thenReturn(Optional.of(flavor("sweet", "old")));
 
-        ResponseStatusException error = assertThrows(
-                ResponseStatusException.class,
-                () -> service.create(request)
-        );
+        ConflictException error = assertThrows(ConflictException.class, () -> service.create(request));
 
-        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        assertEquals("Flavor already exists: sweet", error.getMessage());
         verify(flavorRepo, never()).create(any());
     }
 
     @Test
-    void updateRequiresExistingFlavorAndReturnsReloadedFlavor() {
-        FlavorRequest request = request("ignored-name", null);
+    void updateRenamesExistingFlavorWhenTargetNameIsAvailable() {
+        FlavorRequest request = request("citrus", "Citrico");
         Flavor existing = flavor("sweet", "old");
-        Flavor updated = flavor("sweet", "");
-        when(flavorRepo.findByName("sweet")).thenReturn(Optional.of(existing), Optional.of(updated));
+        Flavor updated = flavor("citrus", "Citrico");
+        when(flavorRepo.findByName("sweet")).thenReturn(Optional.of(existing));
+        when(flavorRepo.findByName("citrus")).thenReturn(Optional.empty());
+        when(flavorRepo.update("sweet", "citrus", "Citrico")).thenReturn(updated);
 
         Flavor result = service.update("sweet", request);
 
         assertSame(updated, result);
-        verify(flavorRepo).update("sweet", "");
+        verify(flavorRepo).update("sweet", "citrus", "Citrico");
     }
 
     @Test
@@ -90,7 +90,21 @@ class FlavorServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class, () -> service.update("missing", request("x", "desc")));
 
-        verify(flavorRepo, never()).update(any(), any());
+        verify(flavorRepo, never()).update(any(), any(), any());
+    }
+
+    @Test
+    void updateThrowsConflictWhenRequestedNameBelongsToAnotherFlavor() {
+        when(flavorRepo.findByName("sweet")).thenReturn(Optional.of(flavor("sweet", "old")));
+        when(flavorRepo.findByName("citrus")).thenReturn(Optional.of(flavor("citrus", "Citrico")));
+
+        ConflictException error = assertThrows(
+                ConflictException.class,
+                () -> service.update("sweet", request("citrus", "Citrico"))
+        );
+
+        assertEquals("Flavor already exists: citrus", error.getMessage());
+        verify(flavorRepo, never()).update(any(), any(), any());
     }
 
     @Test

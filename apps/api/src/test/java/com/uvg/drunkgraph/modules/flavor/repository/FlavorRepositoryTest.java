@@ -16,7 +16,6 @@ import static com.uvg.drunkgraph.support.Neo4jClientMockSupport.queryStub;
 import static com.uvg.drunkgraph.support.Neo4jClientMockSupport.stubFetchAll;
 import static com.uvg.drunkgraph.support.Neo4jClientMockSupport.stubFetchOne;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.verify;
@@ -36,17 +35,19 @@ class FlavorRepositoryTest {
     }
 
     @Test
-    void createBindsFlavorAndDefaultsNullDescription() {
+    void createBindsFlavorAndReturnsCreatedFlavor() {
         QueryStub query = queryStub();
-        when(neo4j.query(contains("MERGE (f:Flavor"))).thenReturn(query.spec());
+        Flavor expected = Flavor.builder().name("sweet").description("").build();
+        when(neo4j.query(contains("CREATE (f:Flavor"))).thenReturn(query.spec());
+        stubFetchOne(query, Flavor.class, Optional.of(expected));
 
-        repository.create(Flavor.builder().name("sweet").description(null).build());
+        Flavor result = repository.create(Flavor.builder().name("sweet").description(null).build());
 
+        assertEquals(expected, result);
         verify(query.spec()).bind("sweet");
         verify(query.spec()).bind("");
         verify(query.binding()).to("name");
         verify(query.binding()).to("description");
-        verify(query.spec()).run();
     }
 
     @Test
@@ -76,17 +77,21 @@ class FlavorRepositoryTest {
     }
 
     @Test
-    void updateBindsNameAndDescriptionThenRunsQuery() {
+    void updateBindsNameNewNameAndDescriptionThenReturnsUpdatedFlavor() {
         QueryStub query = queryStub();
-        when(neo4j.query(contains("SET f.description"))).thenReturn(query.spec());
+        Flavor expected = Flavor.builder().name("citrus").description("Citrico").build();
+        when(neo4j.query(contains("SET f.name = $newName"))).thenReturn(query.spec());
+        stubFetchOne(query, Flavor.class, Optional.of(expected));
 
-        repository.update("sweet", "Azucarado");
+        Flavor result = repository.update("sweet", "citrus", "Citrico");
 
+        assertEquals(expected, result);
         verify(query.spec()).bind("sweet");
-        verify(query.spec()).bind("Azucarado");
+        verify(query.spec()).bind("citrus");
+        verify(query.spec()).bind("Citrico");
         verify(query.binding()).to("name");
+        verify(query.binding()).to("newName");
         verify(query.binding()).to("description");
-        verify(query.spec()).run();
     }
 
     @Test

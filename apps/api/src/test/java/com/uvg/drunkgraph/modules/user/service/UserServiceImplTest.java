@@ -6,6 +6,7 @@ import com.uvg.drunkgraph.modules.user.dto.ConsumedDrink;
 import com.uvg.drunkgraph.modules.user.dto.ConsumptionRequest;
 import com.uvg.drunkgraph.modules.user.dto.TasteRequest;
 import com.uvg.drunkgraph.modules.user.dto.UserPreferencesRequest;
+import com.uvg.drunkgraph.modules.user.dto.UserStats;
 import com.uvg.drunkgraph.modules.user.model.User;
 import com.uvg.drunkgraph.modules.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -130,14 +131,35 @@ class UserServiceImplTest {
     }
 
     @Test
-    void updatePreferencesIsMarkedAsNotImplemented() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> service.updatePreferences("u1", new UserPreferencesRequest()));
+    void updatePreferencesRequiresExistingUserThenReturnsReloadedUser() {
+        UserPreferencesRequest request = new UserPreferencesRequest();
+        request.setBudgetMax(125.0);
+        request.setPrefersAlcohol(false);
+        User original = user("u1");
+        User updated = user("u1");
+        updated.setBudgetMax(125.0);
+        updated.setPrefersAlcohol(false);
+        when(repo.findById("u1")).thenReturn(Optional.of(original), Optional.of(updated));
+
+        User result = service.updatePreferences("u1", request);
+
+        assertSame(updated, result);
+        verify(repo).updatePreferences("u1", request);
     }
 
     @Test
-    void getStatsIsMarkedAsNotImplemented() {
-        assertThrows(UnsupportedOperationException.class, () -> service.getStats("u1"));
+    void getStatsRequiresExistingUserThenReturnsRepositoryResult() {
+        UserStats expected = UserStats.builder()
+                .tried(3)
+                .venues(2)
+                .favCategory("cocktail")
+                .build();
+        when(repo.findById("u1")).thenReturn(Optional.of(user("u1")));
+        when(repo.getStats("u1")).thenReturn(expected);
+
+        UserStats result = service.getStats("u1");
+
+        assertSame(expected, result);
     }
 
     private static User user(String id) {
