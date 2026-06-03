@@ -1,8 +1,8 @@
 "use client";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { throwIfError } from "@/lib/api/error";
 
 const KEY = "/api/users/me/tastes";
 

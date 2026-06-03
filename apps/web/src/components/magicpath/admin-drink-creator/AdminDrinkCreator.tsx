@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-import { type StagedDrink, useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
 import {
   DrinkSpecEditor,
   type EditorDrink,
 } from "@/components/magicpath/admin-venue-list/DrinkSpecEditor";
+import { type StagedDrink, useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
 import { cn } from "@/lib/utils";
 import { BrandButton } from "./BrandButton";
 import { SessionBar } from "./SessionBar";
@@ -270,6 +270,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
 
               <input
                 ref={fileInputRef}
+                id="batch-file-input"
                 type="file"
                 accept="image/*"
                 multiple
@@ -277,9 +278,9 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                 onChange={(e) => handleFiles(e.target.files)}
               />
 
-              <div
+              <label
+                htmlFor="batch-file-input"
                 className="group relative border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30 p-12 flex flex-col items-center justify-center transition-all hover:border-amber-400/50 hover:bg-amber-400/[0.02] cursor-pointer overflow-hidden"
-                onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -296,7 +297,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                     PNG, JPG or WEBP (Max 5MB each)
                   </span>
                 </div>
-              </div>
+              </label>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-4">
                 <AnimatePresence initial={false}>
@@ -319,6 +320,7 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                       )}
                       onClick={() => toggleSelection(img.id)}
                     >
+                      {/* biome-ignore lint/performance/noImgElement: blob URL, next/image unsupported */}
                       <img
                         src={img.previewUrl}
                         alt="Uploaded"
@@ -430,11 +432,12 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="flex -space-x-3 shrink-0">
-                          {drink.previewUrls.slice(0, 3).map((url, idx) => (
+                          {drink.previewUrls.slice(0, 3).map((url) => (
                             <div
-                              key={idx}
+                              key={url}
                               className="w-10 h-10 rounded border-2 border-zinc-900 overflow-hidden bg-zinc-800"
                             >
+                              {/* biome-ignore lint/performance/noImgElement: blob URL, next/image unsupported */}
                               <img
                                 src={url}
                                 alt=""
@@ -451,7 +454,6 @@ export const AdminDrinkCreator: React.FC<Props> = ({ placeId, userEmail }) => {
                         <div className="flex-1 min-w-0">
                           {editingId === drink.id ? (
                             <input
-                              autoFocus
                               value={drink.name}
                               onChange={(e) =>
                                 renameDrink(drink.id, e.target.value)

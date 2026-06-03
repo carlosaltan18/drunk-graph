@@ -78,6 +78,7 @@ export const DrinkNotFoundScreen: React.FC = () => {
         </p>
 
         <button
+          type="button"
           onClick={() => router.push("/dashboard")}
           className="w-full max-w-xs flex items-center justify-center gap-2 py-4 px-8 font-black uppercase tracking-widest text-sm text-white rounded-xl transition-all active:scale-95 hover:opacity-90"
           style={{
@@ -90,13 +91,9 @@ export const DrinkNotFoundScreen: React.FC = () => {
         </button>
 
         <button
+          type="button"
           onClick={() => router.push("/dashboard/browse")}
-          className="mt-4 text-[11px] font-black uppercase tracking-widest transition-colors"
-          style={{
-            color: "#52525b",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#a1a1aa")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#52525b")}
+          className="mt-4 text-[11px] font-black uppercase tracking-widest transition-colors text-[#52525b] hover:text-[#a1a1aa]"
         >
           Browse all drinks →
         </button>

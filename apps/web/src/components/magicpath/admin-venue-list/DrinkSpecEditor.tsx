@@ -13,9 +13,8 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 import * as React from "react";
-import { NumericInput } from "@/components/ui/NumericInput";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { NumericInput } from "@/components/ui/NumericInput";
 import { cn } from "@/lib/utils";
 import { SessionBar } from "./SessionBar";
 
@@ -104,7 +104,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
   };
 
   const closeAddModal = () => {
-    stagedPreviews.forEach((url) => URL.revokeObjectURL(url));
+    for (const url of stagedPreviews) URL.revokeObjectURL(url);
     setStagedFiles([]);
     setStagedPreviews([]);
     setAddImagesOpen(false);
@@ -188,6 +188,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
             </Link>
           )}
           <button
+            type="button"
             onClick={onBack}
             className="text-zinc-600 text-xs font-black uppercase tracking-widest hover:text-zinc-400 transition-colors"
           >
@@ -209,6 +210,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
         {/* LEFT PANEL: Dual-Axis Carousel (65%) */}
         <section className="w-[65%] flex flex-col items-center justify-center p-8 bg-zinc-950 relative border-r border-zinc-900">
           <button
+            type="button"
             onClick={onBack}
             className="absolute top-6 left-8 z-20 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform hover:border-amber-400/50 hover:text-amber-400"
           >
@@ -218,6 +220,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
           {/* Vertical Navigation Controls */}
           <div className="absolute top-12 z-10 flex flex-col items-center">
             <button
+              type="button"
               onClick={handlePrevDrink}
               disabled={currentDrinkIndex === 0}
               suppressHydrationWarning
@@ -300,6 +303,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
             </AnimatePresence>
 
             <button
+              type="button"
               onClick={handlePrevImage}
               disabled={currentImageIndex === 0}
               suppressHydrationWarning
@@ -308,6 +312,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
               <ChevronLeft className="w-6 h-6 text-white group-hover:text-black" />
             </button>
             <button
+              type="button"
               onClick={handleNextImage}
               disabled={currentImageIndex === currentDrink.images.length - 1}
               suppressHydrationWarning
@@ -319,6 +324,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
 
           <div className="absolute bottom-12 z-10 flex flex-col items-center">
             <button
+              type="button"
               onClick={handleNextDrink}
               disabled={currentDrinkIndex === drinks.length - 1}
               suppressHydrationWarning
@@ -345,7 +351,8 @@ export const DrinkSpecEditor: React.FC<Props> = ({
           <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-3 p-2 bg-zinc-900/50 rounded-xl border border-white/5 backdrop-blur-sm">
             {currentDrink.images.map((img, idx) => (
               <button
-                key={idx}
+                type="button"
+                key={img.url}
                 onClick={() => setCurrentImageIndex(idx)}
                 className={cn(
                   "relative w-12 h-12 rounded-md overflow-hidden border-2 transition-all",
@@ -386,10 +393,14 @@ export const DrinkSpecEditor: React.FC<Props> = ({
           <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
             <div className="space-y-4">
               <div className="group">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400 transition-colors">
+                <label
+                  htmlFor={`drink-name-${currentDrinkIndex}`}
+                  className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400 transition-colors"
+                >
                   Drink Name
                 </label>
                 <input
+                  id={`drink-name-${currentDrinkIndex}`}
                   type="text"
                   value={currentDrink.name}
                   onChange={(e) => update({ name: e.target.value })}
@@ -399,10 +410,14 @@ export const DrinkSpecEditor: React.FC<Props> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="group">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400">
+                  <label
+                    htmlFor={`drink-category-${currentDrinkIndex}`}
+                    className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400"
+                  >
                     Category
                   </label>
                   <select
+                    id={`drink-category-${currentDrinkIndex}`}
                     value={currentDrink.category}
                     onChange={(e) => update({ category: e.target.value })}
                     className="w-full bg-zinc-800 border border-white/5 rounded-lg px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400/50 appearance-none"
@@ -415,11 +430,15 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                   </select>
                 </div>
                 <div className="group">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400">
+                  <label
+                    htmlFor={`drink-alcohol-${currentDrinkIndex}`}
+                    className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400"
+                  >
                     Alcohol %
                   </label>
                   <div className="relative">
                     <NumericInput
+                      id={`drink-alcohol-${currentDrinkIndex}`}
                       value={currentDrink.alcoholPercent}
                       onChange={(v) => update({ alcoholPercent: v })}
                       min={0}
@@ -435,11 +454,15 @@ export const DrinkSpecEditor: React.FC<Props> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="group">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400">
+                  <label
+                    htmlFor={`drink-price-${currentDrinkIndex}`}
+                    className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block group-focus-within:text-amber-400"
+                  >
                     Price (Q)
                   </label>
                   <div className="relative">
                     <NumericInput
+                      id={`drink-price-${currentDrinkIndex}`}
                       value={currentDrink.price}
                       onChange={(v) => update({ price: v })}
                       min={0}
@@ -452,9 +475,9 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                 </div>
                 {currentDrink.place && (
                   <div className="group">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block">
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-2 block">
                       Source Venue
-                    </label>
+                    </span>
                     <div className="w-full bg-zinc-950/50 border border-zinc-800 text-zinc-600 rounded-lg px-4 py-3 text-sm font-bold">
                       {currentDrink.place}
                     </div>
@@ -564,6 +587,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
         <DialogContent className="bg-zinc-950 border border-zinc-800 text-white !w-[620px] !max-w-[620px] p-0 overflow-hidden">
           <input
             ref={addImageInputRef}
+            id="add-images-input"
             type="file"
             accept="image/*"
             multiple
@@ -590,7 +614,8 @@ export const DrinkSpecEditor: React.FC<Props> = ({
 
           <div className="p-8 space-y-6">
             {/* Dropzone */}
-            <div
+            <button
+              type="button"
               onClick={() => !uploading && addImageInputRef.current?.click()}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -603,7 +628,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                 if (!uploading) stageFiles(e.dataTransfer.files);
               }}
               className={cn(
-                "relative border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden",
+                "all-unset relative w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all cursor-pointer overflow-hidden",
                 stagedFiles.length > 0 ? "py-6" : "py-16",
                 uploading
                   ? "opacity-50 cursor-not-allowed pointer-events-none"
@@ -629,7 +654,7 @@ export const DrinkSpecEditor: React.FC<Props> = ({
                   PNG, JPG or WEBP
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* Staged preview grid */}
             {stagedPreviews.length > 0 && (

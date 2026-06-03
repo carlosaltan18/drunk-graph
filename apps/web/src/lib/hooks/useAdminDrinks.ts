@@ -2,8 +2,8 @@
 import type { components } from "@generated/admin-api/schema.d.ts";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { throwIfError } from "@/lib/api/error";
 import { adminClientApi } from "@/lib/api/admin-client";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiDrink = components["schemas"]["Drink"];
 type DrinkEditRequest = components["schemas"]["DrinkEditRequest"];

@@ -10,7 +10,6 @@ import { useConsumption } from "@/lib/hooks/useConsumption";
 import { useStats } from "@/lib/hooks/useStats";
 import { cn } from "@/lib/utils";
 
-type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
 type PagedConsumedDrink = components["schemas"]["PagedResultConsumedDrink"];
 type UserStats = components["schemas"]["UserStats"];
 
@@ -70,6 +69,7 @@ export const DrunkGraphHistory = ({
             Start browsing and tap "I tried this" on drinks you've had.
           </p>
           <button
+            type="button"
             onClick={() => router.push("/dashboard/browse")}
             className="group flex items-center gap-2 text-orange-500 font-black tracking-widest text-sm uppercase"
           >
@@ -126,9 +126,10 @@ export const DrunkGraphHistory = ({
               exit={{ opacity: 0, scale: 0.95 }}
               className="relative group"
             >
-              <div
+              <button
+                type="button"
                 className={cn(
-                  "absolute inset-0 right-0 flex items-center justify-end pr-6 bg-red-600 rounded-xl transition-opacity duration-200",
+                  "[all:unset] absolute inset-0 right-0 flex items-center justify-end pr-6 bg-red-600 rounded-xl transition-opacity duration-200",
                   swipedId === drink.id
                     ? "opacity-100"
                     : "opacity-0 pointer-events-none",
@@ -136,7 +137,7 @@ export const DrunkGraphHistory = ({
                 onClick={() => handleDelete(drink.id ?? "")}
               >
                 <Trash2 className="text-white" size={24} />
-              </div>
+              </button>
 
               <motion.div
                 animate={{ x: swipedId === drink.id ? -80 : 0 }}
@@ -177,6 +178,7 @@ export const DrunkGraphHistory = ({
                 </div>
 
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(drink.id ?? "");

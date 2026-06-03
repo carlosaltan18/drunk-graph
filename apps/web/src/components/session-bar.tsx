@@ -5,26 +5,26 @@ import { signOutAdmin, signOutUser } from "@/lib/actions/auth";
 
 type Props = {
   email: string;
-  role: "user" | "admin";
-  otherSession: { email: string; role: "user" | "admin" } | null;
+  userRole: "user" | "admin";
+  otherSession: { email: string; userRole: "user" | "admin" } | null;
 };
 
-export default function SessionBar({ email, role, otherSession }: Props) {
+export default function SessionBar({ email, userRole, otherSession }: Props) {
   const router = useRouter();
 
   async function signOut() {
-    if (role === "admin") await signOutAdmin();
+    if (userRole === "admin") await signOutAdmin();
     else await signOutUser();
   }
 
   function switchSession() {
     router.push(
-      otherSession?.role === "admin" ? "/admin/dashboard" : "/dashboard",
+      otherSession?.userRole === "admin" ? "/admin/dashboard" : "/dashboard",
     );
     router.refresh();
   }
 
-  const isAdmin = role === "admin";
+  const isAdmin = userRole === "admin";
 
   return (
     <div
@@ -44,6 +44,7 @@ export default function SessionBar({ email, role, otherSession }: Props) {
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {otherSession && (
           <button
+            type="button"
             onClick={switchSession}
             className={`text-xs px-2 py-1 rounded-md font-medium transition-colors ${
               isAdmin
@@ -51,12 +52,13 @@ export default function SessionBar({ email, role, otherSession }: Props) {
                 : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
             }`}
           >
-            {otherSession.role === "admin"
+            {otherSession.userRole === "admin"
               ? "Switch to backoffice ↗"
               : "Switch to user app ↗"}
           </button>
         )}
         <button
+          type="button"
           onClick={signOut}
           className={`text-xs px-2 py-1 rounded-md font-medium transition-colors ${
             isAdmin

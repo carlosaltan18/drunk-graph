@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export const DrunkGraphSplash: React.FC = () => {
   const searchParams = useSearchParams();
   const isSignedOut = searchParams.get("signout") === "true";
-  const [triggered, setTriggered] = useState(false);
+  const [_triggered, setTriggered] = useState(false);
 
   useEffect(() => {
     if (isSignedOut) return;
@@ -101,9 +101,9 @@ export const DrunkGraphSplash: React.FC = () => {
                 className="w-full flex flex-col items-center space-y-6"
               >
                 <div className="flex items-center space-x-2">
-                  {[0, 0.2, 0.4].map((delay, i) => (
+                  {[0, 0.2, 0.4].map((delay) => (
                     <motion.div
-                      key={i}
+                      key={delay}
                       animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
                       transition={{
                         repeat: Infinity,

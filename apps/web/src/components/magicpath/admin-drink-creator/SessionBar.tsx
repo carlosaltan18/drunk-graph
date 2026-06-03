@@ -81,6 +81,7 @@ export const SessionBar: React.FC<SessionBarProps> = ({
           </div>
         </div>
         <button
+          type="button"
           onClick={handleSignOut}
           className="flex items-center gap-2 hover:bg-zinc-900 p-2 rounded transition-colors group"
         >

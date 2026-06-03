@@ -11,12 +11,10 @@ import {
   Wine,
 } from "lucide-react";
 import Link from "next/link";
-import * as React from "react";
 import { ClientBottomNav } from "@/components/magicpath/shared/ClientBottomNav";
 import { DrinkImage } from "@/components/magicpath/shared/DrinkImage";
 import { useRecommendations } from "@/lib/hooks/useRecommendations";
 import { useTastes } from "@/lib/hooks/useTastes";
-import { cn } from "@/lib/utils";
 
 type ApiRecommendation = components["schemas"]["Recommendation"];
 
@@ -31,7 +29,7 @@ interface DrinkRecommendation {
   place: string;
   imageUrl: string | null;
 }
-const NAV_LINKS = [
+const _NAV_LINKS = [
   { label: "Feed", href: "/dashboard" },
   { label: "Browse", href: "/dashboard/browse" },
   { label: "History", href: "/dashboard/history" },
@@ -56,7 +54,7 @@ function getCategoryGradient(
       return "from-zinc-700 to-zinc-800";
   }
 }
-function getCategoryIcon(category: DrinkRecommendation["category"]) {
+function _getCategoryIcon(category: DrinkRecommendation["category"]) {
   switch (category) {
     case "cocktail":
       return <GlassWater className="w-5 h-5 text-white/60" />;

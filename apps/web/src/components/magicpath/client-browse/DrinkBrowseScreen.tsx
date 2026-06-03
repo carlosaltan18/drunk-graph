@@ -1,7 +1,7 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Loader2, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { ClientBottomNav } from "@/components/magicpath/shared/ClientBottomNav";
@@ -168,6 +168,7 @@ export const DrinkBrowseScreen = ({ initialPage }: Props) => {
           {CATEGORIES.map((category) => (
             <button
               key={category.id}
+              type="button"
               onClick={() => setActiveCategory(category.id)}
               className={cn(
                 "whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200",
