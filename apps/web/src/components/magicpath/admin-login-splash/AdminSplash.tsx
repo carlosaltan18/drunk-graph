@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { AlertCircle, Lock, LogIn, ShieldCheck } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type React from "react";
 import { useEffect } from "react";
 import { adminAuthClient } from "@/lib/auth-client";
@@ -34,7 +34,6 @@ const BrandingLockup = () => (
 
 export const AdminSplash: React.FC = () => {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const isSignedOut = searchParams.get("signout") === "true";
 
   useEffect(() => {
@@ -72,6 +71,7 @@ export const AdminSplash: React.FC = () => {
                 </span>
               </div>
               <button
+                type="button"
                 onClick={handleSignIn}
                 className="group flex items-center justify-center gap-3 bg-amber-400 text-zinc-950 px-16 py-5 rounded-xl font-black text-xl uppercase tracking-wider hover:bg-amber-300 active:scale-[0.98] transition-all shadow-[0_0_40px_rgba(251,191,36,0.15)]"
               >

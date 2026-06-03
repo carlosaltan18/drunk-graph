@@ -14,9 +14,9 @@ export default async function AdminSessionBar() {
   return (
     <SessionBar
       email={adminSession.user.email}
-      role="admin"
+      userRole="admin"
       otherSession={
-        userSession ? { email: userSession.user.email, role: "user" } : null
+        userSession ? { email: userSession.user.email, userRole: "user" } : null
       }
     />
   );

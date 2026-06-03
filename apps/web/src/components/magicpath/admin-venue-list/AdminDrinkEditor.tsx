@@ -15,11 +15,7 @@ import {
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useAdminDrinks } from "@/lib/hooks/useAdminDrinks";
 import { BrandButton } from "./BrandButton";
-import {
-  type EditorDrink,
-  type FlavorProfile,
-  DrinkSpecEditor,
-} from "./DrinkSpecEditor";
+import { DrinkSpecEditor, type EditorDrink } from "./DrinkSpecEditor";
 
 type ApiDrink = adminComponents["schemas"]["Drink"];
 type ApiPlace = adminComponents["schemas"]["Place"];

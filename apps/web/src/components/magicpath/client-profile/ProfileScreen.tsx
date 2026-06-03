@@ -137,6 +137,7 @@ export const ProfileScreen = ({
                   ))}
                 </div>
                 <button
+                  type="button"
                   onClick={() =>
                     router.push("/dashboard/onboarding?back=/dashboard/profile")
                   }
@@ -152,6 +153,7 @@ export const ProfileScreen = ({
                   No preferences set. Your feed won't be personalized.
                 </p>
                 <button
+                  type="button"
                   onClick={() =>
                     router.push("/dashboard/onboarding?back=/dashboard/profile")
                   }
@@ -207,6 +209,7 @@ export const ProfileScreen = ({
 
         {/* Sign out */}
         <button
+          type="button"
           onClick={handleSignOut}
           className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 rounded-xl py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
         >

@@ -16,6 +16,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="flex items-center gap-3">
         {onBack && (
           <button
+            type="button"
             onClick={onBack}
             className="flex items-center justify-center w-8 h-8 -ml-1 hover:bg-zinc-800 rounded transition-colors"
             aria-label="Go back"

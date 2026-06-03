@@ -1,7 +1,7 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { NumericInput } from "@/components/ui/NumericInput";
@@ -132,6 +132,7 @@ export const FlavorProfileSetup = ({
   };
 
   const markOnboarded = () => {
+    // biome-ignore lint/suspicious/noDocumentCookie: cookieStore is not available in all target environments
     document.cookie = "onboarded=true; path=/; max-age=31536000; SameSite=Lax";
   };
 
@@ -262,6 +263,7 @@ export const FlavorProfileSetup = ({
         {/* Preference Toggle */}
         <section className="mb-12">
           <button
+            type="button"
             onClick={() => setIsNonAlcoholic(!isNonAlcoholic)}
             className="flex items-center justify-between w-full p-4 bg-zinc-900 rounded-xl active:scale-[0.98] transition-transform"
           >
@@ -298,6 +300,7 @@ export const FlavorProfileSetup = ({
             </motion.button>
 
             <button
+              type="button"
               onClick={() => {
                 markOnboarded();
                 router.push(backUrl ?? "/dashboard");

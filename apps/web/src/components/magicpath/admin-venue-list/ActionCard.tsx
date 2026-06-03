@@ -26,10 +26,11 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   const accentColor =
     variant === "admin" ? "text-amber-400" : "text-orange-500";
   const badgeBg = variant === "admin" ? "bg-amber-400" : "bg-orange-500";
+  const Tag = onClick ? "button" : "div";
   return (
-    <div
-      onClick={onClick}
-      className={`group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-all duration-300 flex flex-col h-full ${onClick ? "cursor-pointer active:scale-[0.98]" : ""}`}
+    <Tag
+      {...(onClick ? { type: "button" as const, onClick } : {})}
+      className={`group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-all duration-300 flex flex-col h-full w-full p-0 text-left ${onClick ? "cursor-pointer active:scale-[0.98]" : ""}`}
     >
       {/* Badge Overlay */}
       {badge && (
@@ -89,6 +90,6 @@ export const ActionCard: React.FC<ActionCardProps> = ({
 
       {/* Rough Decorative Edge (Bottom) */}
       <div className="h-1 bg-zinc-950 w-full" />
-    </div>
+    </Tag>
   );
 };

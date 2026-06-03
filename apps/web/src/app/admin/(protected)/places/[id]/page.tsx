@@ -25,6 +25,7 @@ export default async function PlacePage({
     <AdminDrinkEditor
       place={place}
       drinks={drinks ?? {}}
+      // biome-ignore lint/style/noNonNullAssertion: layout redirects if no session
       userEmail={session!.user.email}
     />
   );

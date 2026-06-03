@@ -1,8 +1,8 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useSWRInfinite from "swr/infinite";
-import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiDrink = components["schemas"]["Drink"];
 type PagedDrinks = components["schemas"]["PagedResultDrink"];

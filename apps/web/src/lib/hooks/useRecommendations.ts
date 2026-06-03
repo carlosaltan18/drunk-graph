@@ -1,8 +1,8 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useSWR from "swr";
-import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiRecommendation = components["schemas"]["Recommendation"];
 

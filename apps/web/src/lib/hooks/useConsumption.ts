@@ -3,8 +3,8 @@ import type { components } from "@generated/api/schema.d.ts";
 import React from "react";
 import { toast } from "sonner";
 import useSWR, { mutate as globalMutate } from "swr";
-import { throwIfError } from "@/lib/api/error";
 import { clientApi } from "@/lib/api/client";
+import { throwIfError } from "@/lib/api/error";
 
 type ApiConsumedDrink = components["schemas"]["ConsumedDrink"];
 type PagedConsumedDrink = components["schemas"]["PagedResultConsumedDrink"];

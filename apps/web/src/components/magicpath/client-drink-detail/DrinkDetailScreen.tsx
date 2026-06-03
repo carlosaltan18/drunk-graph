@@ -1,12 +1,11 @@
 "use client";
 import type { components } from "@generated/api/schema.d.ts";
 import useEmblaCarousel from "embla-carousel-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Check,
   ChevronLeft,
-  ChevronRight,
   Info,
   MapPin,
   Star,
@@ -52,10 +51,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       <div className="overflow-hidden h-full" ref={emblaRef}>
         <div className="flex h-full">
           {images.map((url, index) => (
-            <div
-              key={index}
-              className="flex-[0_0_100%] min-w-0 h-full relative"
-            >
+            <div key={url} className="flex-[0_0_100%] min-w-0 h-full relative">
               <DrinkImage
                 src={url}
                 alt={`Drink photo ${index + 1}`}
@@ -73,6 +69,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
         {images.map((_, index) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: carousel dots have no stable identity
             key={index}
             className={cn(
               "h-1.5 rounded-full transition-all duration-300",
@@ -91,10 +88,9 @@ const FlavorIntensityDots = ({ intensity }: { intensity: number }) => {
   const filledDots = Math.round(intensity * 5);
   return (
     <div className="flex gap-1 items-center">
-      {Array.from({
-        length: totalDots,
-      }).map((_, i) => (
+      {Array.from({ length: totalDots }).map((_, i) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: static rating dots have no stable identity
           key={i}
           className={cn(
             "w-2 h-2 rounded-full",
@@ -156,6 +152,7 @@ export const DrinkDetailScreen = ({
             .filter(Boolean)}
         />
         <button
+          type="button"
           onClick={() => router.back()}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-zinc-900/80 flex items-center justify-center text-white backdrop-blur-sm border border-white/10 active:scale-95 transition-transform"
         >
@@ -327,6 +324,7 @@ export const DrinkDetailScreen = ({
         <div className="max-w-md mx-auto space-y-2">
           {!drinkLogged ? (
             <button
+              type="button"
               onClick={handleLogDrink}
               className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-orange-400"
             >
@@ -336,6 +334,7 @@ export const DrinkDetailScreen = ({
           ) : (
             <div className="space-y-2 text-center">
               <button
+                type="button"
                 onClick={handleLogDrink}
                 className="w-full bg-zinc-800 text-zinc-300 font-bold uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2"
               >
@@ -343,6 +342,7 @@ export const DrinkDetailScreen = ({
                 <Check size={16} className="text-green-500" strokeWidth={3} />
               </button>
               <button
+                type="button"
                 onClick={handleRemoveLog}
                 className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest font-bold"
               >
@@ -374,6 +374,7 @@ export const DrinkDetailScreen = ({
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => setRating(star)}
                       className="p-1 transition-transform active:scale-90"
                     >
@@ -399,6 +400,7 @@ export const DrinkDetailScreen = ({
 
                 <div className="pt-4">
                   <button
+                    type="button"
                     onClick={confirmLog}
                     className="w-full bg-orange-500 text-black font-black uppercase py-4 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >

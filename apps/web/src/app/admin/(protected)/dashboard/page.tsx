@@ -9,5 +9,6 @@ export default async function AdminDashboard() {
   const api = await createAdminApi();
   const { data } = await api.GET("/api/admin/places");
 
+  // biome-ignore lint/style/noNonNullAssertion: layout redirects if no session
   return <AdminVenueList fallbackData={data} userEmail={session!.user.email} />;
 }

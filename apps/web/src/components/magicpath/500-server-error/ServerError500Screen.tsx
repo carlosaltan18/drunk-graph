@@ -126,6 +126,7 @@ export const ServerError500Screen: React.FC<Props> = ({
 
         <div className="w-full max-w-xs flex flex-col gap-3">
           <button
+            type="button"
             onClick={reset ?? (() => window.location.reload())}
             className="flex items-center justify-center gap-2 w-full py-4 font-black uppercase tracking-tighter transition-all active:scale-[0.97] hover:brightness-110"
             style={{
@@ -141,6 +142,7 @@ export const ServerError500Screen: React.FC<Props> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => router.push(homeHref)}
             className="flex items-center justify-center gap-2 w-full py-4 font-black uppercase tracking-tighter transition-all active:scale-[0.97] hover:bg-white/5"
             style={{

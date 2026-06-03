@@ -63,6 +63,7 @@ export const General404Screen: React.FC = () => {
       </p>
 
       <button
+        type="button"
         onClick={() => router.push("/dashboard")}
         className="flex items-center gap-2.5 font-extrabold uppercase tracking-tighter transition-all duration-150 active:scale-95 hover:brightness-110"
         style={{

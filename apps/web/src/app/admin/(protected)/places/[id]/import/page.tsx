@@ -10,5 +10,6 @@ export default async function ImportPage({
   const { id } = await params;
   const session = await adminAuth.api.getSession({ headers: await headers() });
 
+  // biome-ignore lint/style/noNonNullAssertion: layout redirects if no session
   return <AdminDrinkCreator placeId={id} userEmail={session!.user.email} />;
 }

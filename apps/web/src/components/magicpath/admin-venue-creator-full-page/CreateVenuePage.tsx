@@ -38,6 +38,7 @@ const AdminSessionBar = ({ userEmail }: { userEmail: string }) => {
         </span>
       </div>
       <button
+        type="button"
         onClick={handleSignOut}
         className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors cursor-pointer group"
       >
@@ -123,6 +124,7 @@ export const CreateVenuePage = ({ userEmail }: Props) => {
       <main className="max-w-7xl mx-auto px-8 py-16">
         <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest mb-4">
           <button
+            type="button"
             onClick={() => router.push("/admin/dashboard")}
             className="text-zinc-500 hover:text-amber-400 transition-colors"
           >
@@ -264,8 +266,8 @@ export const CreateVenuePage = ({ userEmail }: Props) => {
                       "Venue is added to your catalog",
                       "You'll be redirected to the venue list",
                       "Add drinks to make them discoverable",
-                    ].map((step, idx) => (
-                      <div key={idx} className="flex gap-4 items-start group">
+                    ].map((step) => (
+                      <div key={step} className="flex gap-4 items-start group">
                         <span className="flex-none w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-black text-zinc-500 group-hover:border-amber-400 group-hover:text-amber-400 transition-colors">
                           {idx + 1}
                         </span>
